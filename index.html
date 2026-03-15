@@ -45,8 +45,8 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .step-txt code{background:var(--rim);padding:2px 6px;border-radius:5px;font-size:12px;color:var(--c2);}
 
 /* slot grid */
-.slot-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.slot{background:var(--card);border:2px solid var(--rim);border-radius:var(--rad);padding:18px 14px;text-align:center;cursor:pointer;transition:all .15s;position:relative;}
+.slot-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.slot{background:var(--card);border:2px solid var(--rim);border-radius:var(--rad);padding:14px 10px;text-align:center;cursor:pointer;transition:all .15s;position:relative;}
 .slot:active{transform:scale(.96);}
 .slot.taken{opacity:.4;pointer-events:none;}
 .slot-av{width:48px;height:48px;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:20px;}
@@ -123,7 +123,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .brow{display:flex;gap:8px;}
 .brow .btn{flex:1;}
 .err-msg{color:var(--c0);font-size:13px;text-align:center;display:none;padding:4px 0;}
-.maxp-btn{width:42px;height:42px;border-radius:10px;border:1.5px solid var(--rim);background:var(--card);color:var(--muted);font-family:'Bebas Neue',sans-serif;font-size:20px;cursor:pointer;transition:all .15s;}
+.maxp-btn{width:36px;height:36px;border-radius:8px;border:1.5px solid var(--rim);background:var(--card);color:var(--muted);font-family:'Bebas Neue',sans-serif;font-size:18px;cursor:pointer;transition:all .15s;}
 .maxp-btn:active{transform:scale(.95);}
 .maxp-btn.active{background:var(--text);color:var(--bg);border-color:var(--text);}
 .theme-btn{position:absolute;top:16px;right:16px;width:38px;height:38px;border-radius:10px;border:1.5px solid var(--rim);background:var(--card);color:var(--muted);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;transition:all .15s;}
@@ -204,10 +204,14 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   <div id="lob-host" style="display:none;flex-direction:column;gap:10px;">
     <div class="rrow-cfg">
       <label>Liczba graczy</label>
-      <div style="display:flex;gap:6px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="maxp-btn" data-n="2" onclick="setMaxPlayers(2)">2</button>
         <button class="maxp-btn" data-n="3" onclick="setMaxPlayers(3)">3</button>
-        <button class="maxp-btn active" data-n="4" onclick="setMaxPlayers(4)">4</button>
+        <button class="maxp-btn" data-n="4" onclick="setMaxPlayers(4)">4</button>
+        <button class="maxp-btn" data-n="5" onclick="setMaxPlayers(5)">5</button>
+        <button class="maxp-btn" data-n="6" onclick="setMaxPlayers(6)">6</button>
+        <button class="maxp-btn" data-n="7" onclick="setMaxPlayers(7)">7</button>
+        <button class="maxp-btn active" data-n="8" onclick="setMaxPlayers(8)">8</button>
       </div>
     </div>
     <div class="rrow-cfg">
@@ -329,7 +333,7 @@ const QS=[
 ];
 /* ═══════════════════════════════════════════════════════════════ */
 
-const COLORS=['#a78bfa','#38bdf8','#fb923c','#e879f9'];
+const COLORS=['#a78bfa','#38bdf8','#fb923c','#e879f9','#f43f5e','#34d399','#facc15','#60a5fa'];
 
 /* ── MOTYW ── */
 function applyTheme(t){
@@ -422,13 +426,13 @@ function norm(gs){
   if(!gs)return gs;
   // Firebase returns arrays-with-nulls as plain objects — convert back to real arrays
   const toArr4 = v => {
-    if(Array.isArray(v)) { while(v.length<4) v.push(null); return v; }
+    if(Array.isArray(v)) { while(v.length<8) v.push(null); return v; }
     if(v && typeof v==='object') {
-      const a=[null,null,null,null];
-      Object.keys(v).forEach(k=>{ const n=parseInt(k); if(n>=0&&n<4) a[n]=v[k]; });
+      const a=[null,null,null,null,null,null,null,null];
+      Object.keys(v).forEach(k=>{ const n=parseInt(k); if(n>=0&&n<8) a[n]=v[k]; });
       return a;
     }
-    return [null,null,null,null];
+    return [null,null,null,null,null,null,null,null];
   };
   const toArr = v => {
     if(Array.isArray(v)) return v;
@@ -445,7 +449,7 @@ function norm(gs){
   gs.qSeq     = toArr(gs.qSeq);
   gs.votes    = gs.votes || {};
   gs.ready      = gs.ready || {};
-  gs.maxPlayers = gs.maxPlayers || 4;
+  gs.maxPlayers = gs.maxPlayers || 8;
   // Normalize vote keys AND values to integers
   if(gs.votes && typeof gs.votes==='object'){
     const v={};
@@ -466,7 +470,7 @@ let pollTimer=null;
 let _sjPick=null;
 let _lastRi=null; // track round index to reset local state on round change
 let _allVotedAt=null; // timestamp when all votes first detected
-let _maxPlayers=4; // host-controlled, 2-4
+let _maxPlayers=8; // host-controlled, 2-8
 
 function setMaxPlayers(n){
   _maxPlayers=n;
@@ -584,7 +588,7 @@ async function createGame(){
   $('home-err').style.color='var(--muted)';
   try{
     gameId=rnd4();
-    GS={phase:'lobby',players:[{name,pts:0},null,null,null],subjects:[],qSeq:[],rt:0,ri:0,votes:{},sa:-1,ready:{},maxPlayers:4};
+    GS={phase:'lobby',players:[{name,pts:0},null,null,null,null,null,null,null],subjects:[],qSeq:[],rt:0,ri:0,votes:{},sa:-1,ready:{},maxPlayers:8};
     await fbPut(`games/${gameId}`,GS);
     mySlot=0;isHost=true;
     sessionStorage.setItem('ego_sess',JSON.stringify({gameId,mySlot}));
@@ -625,8 +629,8 @@ async function joinGame(){
 function renderSlots(gs,name){
   $('slots-sub').textContent=name?`Cześć ${name}! Wybierz swój slot:`:'Wybierz swój slot';
   const grid=$('slot-grid');grid.innerHTML='';
-  const max=gs.maxPlayers||4;
-  for(let i=0;i<4;i++){
+  const max=gs.maxPlayers||8;
+  for(let i=0;i<8;i++){
     if(i>=max) continue; // hide slots beyond limit
     const p=gs.players[i];
     const isMine=mySlot===i;
@@ -647,9 +651,15 @@ function renderSlots(gs,name){
 
 async function claimSlot(slot,name){
   try{
-    // re-fetch to avoid race
     const gs=await fbGet(`games/${gameId}`);
     if(gs.players[slot]&&mySlot!==slot){alert('Ten slot jest już zajęty!');GS=norm(gs);renderSlots(norm(gs),name);return;}
+    // Check for duplicate name
+    const normalName=(name||'Gracz').trim().toLowerCase();
+    const duplicate=gs.players.some((p,i)=>p&&i!==slot&&p.name.trim().toLowerCase()===normalName);
+    if(duplicate){
+      alert(`Imię "${name}" jest już zajęte przez innego gracza. Wpisz inne imię.`);
+      return;
+    }
     GS=norm(dc(gs));
     GS.players[slot]={name:name||'Gracz',pts:gs.players[slot]?.pts??0};
     await fbPut(`games/${gameId}`,GS);
@@ -673,7 +683,7 @@ function renderLobby(){
   $('lob-code').textContent=gameId||'----';
   const ready=GS.ready||{};
   const players=GS.players;
-  const max=GS.maxPlayers||4;
+  const max=GS.maxPlayers||8;
   const activePlayers=players.slice(0,max);
   const filled=activePlayers.filter(Boolean).length;
   $('lob-cnt').textContent=`Gracze (${filled}/${max})`;
@@ -765,10 +775,13 @@ async function toggleReady(){
 async function changeName(){
   const newName=$('lob-name-inp').value.trim();
   if(!newName||mySlot===null)return;
+  // Check duplicate
+  const norm2=newName.toLowerCase();
+  const dup=GS.players.some((p,i)=>p&&i!==mySlot&&p.name.trim().toLowerCase()===norm2);
+  if(dup){alert(`Imię "${newName}" jest już zajęte. Wybierz inne.`);return;}
   try{
     const patch={};
     patch[`players/${mySlot}/name`]=newName;
-    // Reset own ready when changing name
     if(!GS.ready) GS.ready={};
     GS.ready[mySlot]=false;
     patch[`ready/${mySlot}`]=false;
