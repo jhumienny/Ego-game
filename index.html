@@ -242,7 +242,6 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   <div class="ans-list" id="v-ans"></div>
   <div class="vstatus" id="v-st"></div>
   <button class="btn btn-lit" id="btn-vote" style="display:none" onclick="confirmVote()">Zatwierdź odpowiedź ✓</button>
-  <button class="btn btn-dim" id="btn-swap-v" style="display:none" onclick="swapQuestion()"></button>
   <button class="btn btn-dim" style="font-size:12px;padding:10px;color:var(--c0);border-color:var(--c0)33;margin-top:4px" onclick="leaveGame()">← Opuść grę</button>
 </div>
 
@@ -632,9 +631,9 @@ async function joinGame(){
 // ── SLOTS ──
 function renderSlots(gs,name){
   $('slots-sub').textContent='Wybierz swój slot';
-  // Pre-fill name input
+  // Always pre-fill from the passed name (from sessionStorage or inp-name)
   const ni=$('slots-name-inp');
-  if(ni && ni.value==='' && name) ni.value=name;
+  if(ni && name) ni.value=name;
   const grid=$('slot-grid');grid.innerHTML='';
   const max=gs.maxPlayers||8;
   for(let i=0;i<8;i++){
@@ -852,19 +851,29 @@ async function hostStart(){
 function render(){
   if(!GS)return;
 
-  // Reset local per-round state whenever round changes (for all players, not just host)
+  // Reset local per-round state whenever round changes
   const currentRi = GS.ri ?? 0;
   if(_lastRi !== null && _lastRi !== currentRi){
-    _localVote=null; _confirmedVote=null; _sjPick=null; _sjPending=null; _swapsLeft=2; _sjSwapsLeft=2;
+    _localVote=null; _confirmedVote=null; _sjPick=null; _sjPending=null;
+    _swapsLeft=2; _sjSwapsLeft=2; _lastSwapAt=null;
   }
   _lastRi = currentRi;
+
+  // Detect question swap by subject — reset local vote for guessers
+  const curSwapAt=GS.swapAt||null;
+  if(curSwapAt && curSwapAt !== _lastSwapAt && !amSJ()){
+    _lastSwapAt=curSwapAt;
+    _localVote=null; _confirmedVote=null;
+    // Show toast notification
+    showSwapToast();
+  }
+  if(_lastSwapAt===null && curSwapAt) _lastSwapAt=curSwapAt; // init without triggering
 
   // If on slots screen, keep updating it
   if($('s-slots').classList.contains('on')){
     renderSlots(GS,sessionStorage.getItem('ego_name')||'Gracz');
     return;
   }
-  // Always follow the game phase — even if currently on lobby screen
   switch(GS.phase){
     case'lobby':  renderLobby();  break;
     case'voting': renderVoting(); break;
@@ -872,6 +881,24 @@ function render(){
     case'reveal': renderReveal(); break;
     case'ended':  renderEnd();    break;
   }
+}
+
+function showSwapToast(){
+  const si=GS.subjects?.[GS.ri??0]??0;
+  const sp=GS.players?.[si];
+  const name=sp?.name||'Temat';
+  // Create or reuse toast
+  let t=$('swap-toast');
+  if(!t){
+    t=document.createElement('div');
+    t.id='swap-toast';
+    t.style.cssText='position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;background:#1e1b4b;border:2px solid #818cf8;color:#a5b4fc;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;text-align:center;max-width:300px;box-shadow:0 4px 20px #0006;animation:pop .3s ease;';
+    document.body.appendChild(t);
+  }
+  t.textContent=`🔄 ${name} zmienił/a pytanie!`;
+  t.style.display='block';
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>{t.style.display='none';},3500);
 }
 
 // ── helpers ──
@@ -961,7 +988,6 @@ function renderVoting(){
   if(voted){
     buildAns('v-ans',q.a,true,shownVote,null,null);
     $('btn-vote').style.display='none';
-    $('btn-swap-v').style.display='none';
     const guessers=GS.players.filter((p,i)=>p&&i!==si);
     const done=guessers.filter((p,gi)=>{const pi=GS.players.indexOf(p);return GS.votes[pi]!==undefined;}).length;
     $('v-st').innerHTML=`<span style="color:var(--c2)">✓ ${gW(myName,'Zatwierdziłeś','Zatwierdziłaś')}!</span> Czekaj na pozostałych… (${done}/${guessers.length})`;
@@ -978,38 +1004,29 @@ function renderVoting(){
       $('btn-vote').style.display='none';
       $('v-st').textContent='Jak twoim zdaniem odpowie?';
     }
-    // Swap button — visible only before confirming
-    const sb=$('btn-swap-v');
-    sb.style.display='block';
-    sb.textContent=_swapBtnLabel(_swapsLeft);
-    sb.disabled=_swapsLeft<=0;
-    sb.style.opacity=_swapsLeft>0?'1':'0.4';
   }
   show('s-vote');
 }
 
 // ── SWAP QUESTION ──
+let _lastSwapAt=null; // track last swap timestamp seen
+
 function _doSwap(onDone){
   const used=GS.qSeq||[];
   const available=QS.map((_,i)=>i).filter(i=>!used.includes(i));
-  // If pool exhausted, allow repeats from non-current
   const pool=available.length>0 ? available : QS.map((_,i)=>i).filter(i=>i!==GS.qSeq[GS.ri]);
-  if(!pool.length)return; // no swap possible
+  if(!pool.length)return;
   const newQIdx=pool[Math.floor(Math.random()*pool.length)];
-  // Replace current question in qSeq
   const newSeq=[...GS.qSeq];
   newSeq[GS.ri]=newQIdx;
   GS.qSeq=newSeq;
-  // Push to Firebase (host will broadcast on next poll, but update locally immediately)
-  fbPatch(`games/${gameId}`,{qSeq:newSeq}).catch(()=>{});
+  const swapAt=Date.now();
+  GS.swapAt=swapAt;
+  _lastSwapAt=swapAt; // subject already knows about this swap
+  // Also reset all votes since question changed
+  GS.votes={};
+  fbPatch(`games/${gameId}`,{qSeq:newSeq, swapAt, votes:null}).catch(()=>{});
   onDone();
-}
-
-function swapQuestion(){
-  if(_swapsLeft<=0)return;
-  _swapsLeft--;
-  _localVote=null; _confirmedVote=null;
-  _doSwap(()=>renderVoting());
 }
 
 function swapQuestionSJ(){
@@ -1209,7 +1226,7 @@ async function nextRound(){
     const gs=await fbGet(`games/${gameId}`);
     GS=norm(dc(gs));
     if(GS.ri+1>=GS.rt){GS.phase='ended';}
-    else{GS.ri++;GS.votes={};GS.sa=-1;GS.phase='voting';_localVote=null;_confirmedVote=null;_sjPick=null;_sjPending=null;_swapsLeft=2;_sjSwapsLeft=2;_allVotedAt=null;}
+    else{GS.ri++;GS.votes={};GS.sa=-1;GS.phase='voting';_localVote=null;_confirmedVote=null;_sjPick=null;_sjPending=null;_swapsLeft=2;_sjSwapsLeft=2;_lastSwapAt=null;_allVotedAt=null;}
     await writeGS();render();
   }catch(e){console.error('nextRound',e);}
 }
