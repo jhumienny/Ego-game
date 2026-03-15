@@ -617,35 +617,30 @@ function renderLobby(){
     }
   }
 
-  // Host controls
+  // Host / guest controls
+  const allReady=players.every((p,i)=>!p||!!ready[i]);
   if(isHost){
     $('lob-host').style.display='flex';
     $('lob-guest').style.display='none';
-    // Check if all players ready
-    const allReady=players.every((p,i)=>!p||!!ready[i]);
-    if(isHost){
-      // Keep button but mark auto-starting
-      const btn=$('btn-start');
-      if(allReady && filled>=2){
-        btn.disabled=false;
-        btn.style.opacity='1';
-        btn.textContent='▶ Gra startuje automatycznie…';
-      } else {
-        btn.disabled=true;
-        btn.style.opacity='0.4';
-        const readyCount=players.filter((p,i)=>p&&!!ready[i]).length;
-        btn.textContent=`Gotowych: ${readyCount}/${filled} — czekaj…`;
-      }
-      $('lob-host').style.display='flex';
-      $('lob-guest').style.display='none';
+    const btn=$('btn-start');
+    if(allReady && filled>=2){
+      btn.disabled=false;
+      btn.style.opacity='1';
+      btn.textContent='▶ Gra startuje automatycznie…';
     } else {
-      $('lob-host').style.display='none';
-      $('lob-guest').style.display='block';
+      btn.disabled=true;
+      btn.style.opacity='0.4';
       const readyCount=players.filter((p,i)=>p&&!!ready[i]).length;
-      $('lob-guest-conn').innerHTML=allReady
-        ? `<span class="cdot dok"></span>Wszyscy gotowi! Gra startuje za chwilę…`
-        : `<span class="cdot dwait"></span>Gotowych: ${readyCount}/${filled} — czekaj na pozostałych`;
+      btn.textContent=`Gotowych: ${readyCount}/${filled} — czekaj…`;
     }
+  } else {
+    $('lob-host').style.display='none';
+    $('lob-guest').style.display='block';
+    const readyCount=players.filter((p,i)=>p&&!!ready[i]).length;
+    $('lob-guest-conn').innerHTML=allReady
+      ? `<span class="cdot dok"></span>Wszyscy gotowi! Gra startuje za chwilę…`
+      : `<span class="cdot dwait"></span>Gotowych: ${readyCount}/${filled} — czekaj na pozostałych`;
+  }
   show('s-lobby');
 }
 
