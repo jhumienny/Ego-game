@@ -985,6 +985,7 @@ function qForSubject(q){
   s=s.replace(/co zrobi jako pierwsze/i,'co zrobisz jako pierwsze');
   s=s.replace(/gdyby mógł\/a zmienić/i,'Gdybyś mógł/a zmienić');
   // Remove mógł/a from verb list since we handle it in specific patterns
+  s=s.replace(/gdy czuje że/gi,'gdy czujesz że');
   s=s.replace(/towarzyszy najczęściej/i,'towarzyszy Ci najczęściej');
   s=s.replace(/\s+/g,' ');
   s=s.replace(/obejrzy\b/i,'obejrzysz');
