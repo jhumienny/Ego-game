@@ -1024,63 +1024,12 @@ async function handleGSUpdate(){
       } else { _allVotedAt=null; }
     }
 
-    if(GS.phase==='subject' && GS.sa!==-1){
-      if(!_allVotedAt) _allVotedAt=Date.now();
-      const remaining=Math.ceil((2000-(Date.now()-_allVotedAt))/1000);
-      if(remaining>0){
-        if($('sync-st'))$('sync-st').textContent=`Temat odpowiedział! Zagłosujcie za ${remaining}s…`;
-      } else {
-        _allVotedAt=null;
-        await fbPatch(`games/${gameId}`,{phase:'voting'});
-        GS.phase='voting';
-      }
-    }
-
+    // subject→voting and voting→reveal are now handled client-side
+    // in submitSJ() and castVote() — handleGSUpdate just renders
     if(GS.phase==='voting'){
       const guessers=GS.players.filter((p,i)=>p&&i!==si);
-      const allVoted=guessers.length>0&&guessers.every((p,gi)=>{const pi=GS.players.indexOf(p);return GS.votes[pi]!==undefined;});
       const done=guessers.filter((p,gi)=>{const pi=GS.players.indexOf(p);return GS.votes[pi]!==undefined;}).length;
-      if(allVoted){
-        if(!_allVotedAt){
-          _allVotedAt=Date.now();
-          startCountdown(3000,
-            r=>{ if($('sync-st'))$('sync-st').textContent=`Wszyscy zagłosowali! Wyniki za ${r}s…`; },
-            async()=>{
-              _allVotedAt=null;
-              const next=norm(dc(GS)); next.phase='reveal';
-              let poolDelta=0;
-              next.players.forEach((p,i)=>{
-                if(!p||i===si)return;
-                const bet=parseInt(next.bets?.[i])||1;
-                if(next.votes[i]==next.sa){next.players[i].pts+=bet;next.players[si].pts++;poolDelta-=bet;poolDelta--;}
-                else{const actual=Math.min(bet,next.players[i].pts);next.players[i].pts=Math.max(0,next.players[i].pts-actual);poolDelta+=actual;}
-              });
-              next.pool=Math.max(0,(next.pool||0)+poolDelta);
-              const mode=next.gameMode||'rounds';
-              const anyBroke=next.players.some(p=>p&&p.pts<=0);
-              if(mode==='pool'&&(next.pool<=0||anyBroke))next.phase='ended';
-              else if(mode==='rounds'&&next.ri+1>=next.rt)next.phase='ended';
-              GS=next; await writeGS();
-            }
-          );
-        }
-        if($('sync-st'))$('sync-st').textContent=`Odpowiedzi: ${done}/${guessers.length}`;
-      } else {
-        if($('sync-st'))$('sync-st').textContent=`Odpowiedzi: ${done}/${guessers.length}`;
-        // Race condition safety: if only 1 vote missing, retry fetch after short delay
-        if(done===guessers.length-1 && !_voteRetryTimer){
-          _voteRetryTimer=setTimeout(async()=>{
-            _voteRetryTimer=null;
-            if(!gameId||!GS||GS.phase!=='voting')return;
-            try{
-              const gs=await fbGet(`games/${gameId}`);
-              if(gs){GS=norm(gs);await handleGSUpdate();}
-            }catch(e){}
-          },600);
-        } else if(done<guessers.length-1){
-          _allVotedAt=null; stopCountdown();
-        }
-      }
+      if($('sync-st'))$('sync-st').textContent=`Odpowiedzi: ${done}/${guessers.length}`;
     }
   }
 
@@ -1741,6 +1690,44 @@ async function castVote(ans){
     GS.votes[mySlot]=ans;
     if(!GS.bets) GS.bets={};
     GS.bets[mySlot]=_localBet;
+
+    // Check if I was the last voter — if so, compute reveal immediately
+    const si=SI();
+    const guessers=GS.players.filter((p,i)=>p&&i!==si);
+    const allVoted=guessers.every((p,gi)=>{
+      const pi=GS.players.indexOf(p);
+      return GS.votes[pi]!==undefined;
+    });
+
+    if(allVoted && guessers.length>0){
+      // Small delay so other clients' SSE can settle, then write reveal
+      await new Promise(r=>setTimeout(r,400));
+      // Re-fetch to get authoritative state before computing
+      const fresh=await fbGet(`games/${gameId}`);
+      if(!fresh||fresh.phase!=='voting'){render();return;} // already transitioned
+      const next=norm(dc(fresh));
+      next.phase='reveal';
+      let poolDelta=0;
+      next.players.forEach((p,i)=>{
+        if(!p||i===si)return;
+        const bet=parseInt(next.bets?.[i])||1;
+        if(next.votes[i]==next.sa){
+          next.players[i].pts+=bet; next.players[si].pts++;
+          poolDelta-=bet; poolDelta--;
+        } else {
+          const actual=Math.min(bet,next.players[i].pts);
+          next.players[i].pts=Math.max(0,next.players[i].pts-actual);
+          poolDelta+=actual;
+        }
+      });
+      next.pool=Math.max(0,(next.pool||0)+poolDelta);
+      const mode=next.gameMode||'rounds';
+      const anyBroke=next.players.some(p=>p&&p.pts<=0);
+      if(mode==='pool'&&(next.pool<=0||anyBroke)) next.phase='ended';
+      else if(mode==='rounds'&&next.ri+1>=next.rt) next.phase='ended';
+      GS=next;
+      await writeGS();
+    }
     render();
   }catch(e){console.error('castVote',e);}
 }
@@ -1800,9 +1787,10 @@ function renderSubj(){
 async function submitSJ(){
   if(_sjPending===null)return;
   try{
-    const patch={sa:_sjPending};
-    await fbPatch(`games/${gameId}`,patch);
+    // Write answer AND immediately advance to voting — no host needed
+    await fbPatch(`games/${gameId}`,{sa:_sjPending, phase:'voting'});
     GS.sa=_sjPending;
+    GS.phase='voting';
     render();
   }catch(e){console.error('submitSJ',e);}
 }
