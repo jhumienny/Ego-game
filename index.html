@@ -1697,8 +1697,7 @@ function renderVoting(){
       $('v-bet').style.display='flex';
       $('v-bet').style.flexDirection='column';
       $('v-bet').style.gap='8px';
-      // Ensure default bet=1 is visually active
-      if(!GS.bets||GS.bets[mySlot]===undefined) _localBet=1;
+      // Don't override _localBet if user already picked — only init on first show
       updateBetUI();
       $('v-st').textContent='';
     } else {
