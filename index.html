@@ -860,7 +860,47 @@ function isFeminine(name){
 // Usage: gW(name, masc, fem)
 function gW(name,masc,fem){return isFeminine(name)?fem:masc;}
 
-const POLL_MS=2500;
+// Transforms question from 3rd person to 2nd person for subject screen
+function qForSubject(q){
+  // Remove [imię] and following space
+  let s=q.replace('[imię] ','').replace(' [imię]','').replace('[imię]','');
+  // Verb map: 3rd person → 2nd person (most common in our questions)
+  const verbs=[
+    ['myśli','myślisz'],['reaguje','reagujesz'],['zachowuje się','zachowujesz się'],
+    ['zachowuje','zachowujesz'],['podchodzi','podchodzisz'],['robi','robisz'],
+    ['wybiera','wybierasz'],['czuje','czujesz'],['ceni','cenisz'],['pełni','pełnisz'],
+    ['traktuje','traktujesz'],['radzi','radzisz'],['podejmuje','podejmujesz'],
+    ['irytuje','irytujesz'],['spędza','spędzasz'],['stresuje','stresujesz'],
+    ['mówi','mówisz'],['chce','chcesz'],['lubi','lubisz'],['kocha','kochasz'],
+    ['uważa','uważasz'],['szuka','szukasz'],['woli','wolisz'],['zrobi','zrobisz'],
+    ['wyjedzie','wyjedziesz'],['kupi','kupisz'],['odłoży','odłożysz'],
+    ['zmienił/a','zmieniłeś/aś'],['przeprowadził/a','przeprowadziłeś/aś'],
+    ['naprawił/a','naprawiłeś/aś'],['jest','jesteś'],['ma','masz'],['wie','wiesz'],
+    ['powie','powiesz'],['byłby/łaby','byłbyś/łabyś'],['mógł/a','możesz'],
+    ['daje','dajesz'],['bierze','bierzesz'],['spędził/a','spędziłeś/aś'],
+    ['bywa','bywasz'],['wstaje','wstajesz'],['śpi','śpisz'],['je','jesz'],
+    ['pije','pijesz'],['czyta','czytasz'],['słucha','słuchasz'],['ogląda','oglądasz'],
+    ['planuje','planujesz'],['organizuje','organizujesz'],['angażuje','angażujesz'],
+    ['zależy','zależy Ci'],['przeszkadza','przeszkadza Ci'],['podoba','podoba Ci się'],
+    ['denerwuje','denerwuje Cię'],['irytuje Cię','irytuje Cię'],
+  ];
+  // Apply longest match first
+  verbs.sort((a,b)=>b[0].length-a[0].length);
+  for(const [from,to] of verbs){
+    // Use case-insensitive search without \b since Polish chars break word boundaries
+    const idx=s.toLowerCase().indexOf(from.toLowerCase());
+    if(idx>=0){
+      // Check it's a whole word (preceded/followed by space, punctuation or start/end)
+      const before=idx===0||/[\s,?!]/.test(s[idx-1]);
+      const after=idx+from.length>=s.length||/[\s,?!]/.test(s[idx+from.length]);
+      if(before&&after){
+        s=s.slice(0,idx)+to+s.slice(idx+from.length);
+        break;
+      }
+    }
+  }
+  return s;
+}
 
 // ── utils ──
 const C=i=>COLORS[i%4];
@@ -1502,9 +1542,9 @@ function renderVoting(){
     $('v-meta').textContent=`Runda ${ri} / ${tot}`;
     $('v-about').innerHTML=`Inni zgadują Twoją odpowiedź…`;
     $('v-q').textContent=q.q.replace('[imię]',sp.name);
-    // Show chosen answer highlighted
     buildAns('v-ans',q.a,true,GS.sa,null,null);
     $('btn-vote').style.display='none';
+    $('v-bet').style.display='none';
     $('v-st').innerHTML=`
       <div style="background:var(--card);border:1.5px solid var(--rim);border-radius:12px;padding:14px 16px;text-align:center;margin-top:4px">
         <div style="font-size:20px;margin-bottom:6px">🤫</div>
@@ -1544,6 +1584,8 @@ function renderVoting(){
       btns.forEach((b,i)=>{if(i==_localVote){b.classList.add('chosen');b.querySelector('.anum').style.background='var(--text)';b.querySelector('.anum').style.color='var(--bg)';}});
       $('btn-vote').style.display='block';
       $('v-bet').style.display='block';
+      // Ensure default bet=1 is visually active
+      if(!GS.bets||GS.bets[mySlot]===undefined) _localBet=1;
       updateBetUI();
       $('v-st').textContent='';
     } else {
@@ -1615,6 +1657,7 @@ function confirmVote(){
   if(_localVote===null)return;
   _confirmedVote=_localVote;
   $('btn-vote').style.display='none';
+  $('v-bet').style.display='none';
   buildAns('v-ans',QS[GS.qSeq[GS.ri]].a,true,_confirmedVote,null,null);
   const myName=GS&&mySlot!==null?GS.players[mySlot]?.name||'':'';
   $('v-st').innerHTML=`<span style="color:var(--c2)">✓ ${gW(myName,'Zatwierdziłeś','Zatwierdziłaś')}! Czekaj na pozostałych…</span>`;
@@ -1657,9 +1700,7 @@ function renderSubj(){
   // Subject screen
   $('sj-meta').textContent=`Runda ${ri} / ${tot} — To pytanie jest o Tobie!`;
   $('sj-about').textContent=`Odpowiedz szczerze!`;
-  // Replace [imię] with "Ciebie/Ty/Twój" forms — strip the name
-  const subjQ=q.q.replace('[imię]','Ciebie').replace(/\bCiebie\b(?=\s+\w)/g,'Ciebie');
-  $('sj-q').textContent=subjQ;
+  $('sj-q').textContent=qForSubject(q.q);
 
   // Build answer buttons — always unlocked so subject can change
   const ac=$('sj-ans'); ac.innerHTML='';
