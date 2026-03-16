@@ -1401,12 +1401,13 @@ async function joinGame(){
 function renderSlots(gs,name){
   const ni=$('slots-name-inp');
   // Only set input value on first load, never overwrite while user is typing
-  if(ni && name && document.activeElement!==ni && !ni.dataset.touched){
+  if(ni && name && !ni.dataset.touched){
     ni.value=name;
   }
-  const displayName=(ni?.value||name||'').trim();
-  $('slots-sub').textContent=displayName?`Cześć ${displayName}! Wybierz swój slot`:'Wybierz swój slot';
-  renderSlotsGrid(gs, displayName||name||'Gracz');
+  // Use confirmed name for display — never live input value
+  const confirmedName=(sessionStorage.getItem('ego_name')||name||'').trim();
+  $('slots-sub').textContent=confirmedName?`Cześć ${confirmedName}! Wybierz swój slot`:'Wybierz swój slot';
+  renderSlotsGrid(gs, confirmedName||'Gracz');
   $('slots-conn').innerHTML=`<span class="cdot dok"></span>Połączono. Wybierz slot aby dołączyć.`;
 }
 
@@ -1414,17 +1415,17 @@ function changeSlotName(){
   const ni=$('slots-name-inp');
   const newName=(ni?.value||'').trim();
   if(!newName){ni?.focus();return;}
-  if($('inp-name')) $('inp-name').value=newName;
+  // Save confirmed name
   sessionStorage.setItem('ego_name',newName);
-  // Clear touched flag so polling can update after name change
+  if($('inp-name')) $('inp-name').value=newName;
+  // Clear touched flag
   if(ni) delete ni.dataset.touched;
+  // Visual feedback on button
   const btn=ni?.nextElementSibling;
   if(btn){btn.textContent='✓';setTimeout(()=>{btn.textContent='Zmień';},1500);}
+  // NOW update subtitle and grid with confirmed name
   $('slots-sub').textContent=`Cześć ${newName}! Wybierz swój slot`;
-  if(GS){
-    const grid=$('slot-grid');
-    if(grid) renderSlotsGrid(GS,newName);
-  }
+  if(GS) renderSlotsGrid(GS, newName);
 }
 
 function renderSlotsGrid(gs,name){
