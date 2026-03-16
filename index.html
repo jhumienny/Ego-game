@@ -211,11 +211,11 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="maxp-btn" data-n="2" onclick="setMaxPlayers(2)">2</button>
         <button class="maxp-btn" data-n="3" onclick="setMaxPlayers(3)">3</button>
-        <button class="maxp-btn" data-n="4" onclick="setMaxPlayers(4)">4</button>
+        <button class="maxp-btn active" data-n="4" onclick="setMaxPlayers(4)">4</button>
         <button class="maxp-btn" data-n="5" onclick="setMaxPlayers(5)">5</button>
         <button class="maxp-btn" data-n="6" onclick="setMaxPlayers(6)">6</button>
         <button class="maxp-btn" data-n="7" onclick="setMaxPlayers(7)">7</button>
-        <button class="maxp-btn active" data-n="8" onclick="setMaxPlayers(8)">8</button>
+        <button class="maxp-btn" data-n="8" onclick="setMaxPlayers(8)">8</button>
       </div>
     </div>
     <div class="rrow-cfg">
@@ -447,7 +447,7 @@ function norm(gs){
   gs.qSeq     = toArr(gs.qSeq);
   gs.votes    = gs.votes || {};
   gs.ready      = gs.ready || {};
-  gs.maxPlayers = gs.maxPlayers || 8;
+  gs.maxPlayers = gs.maxPlayers || 4;
   gs.swapAt     = gs.swapAt || null;
   // Normalize vote keys AND values to integers
   if(gs.votes && typeof gs.votes==='object'){
@@ -469,7 +469,7 @@ let pollTimer=null;
 let _sjPick=null;
 let _lastRi=null; // track round index to reset local state on round change
 let _allVotedAt=null; // timestamp when all votes first detected
-let _maxPlayers=8; // host-controlled, 2-8
+let _maxPlayers=4; // host-controlled, 2-8
 
 function setMaxPlayers(n){
   _maxPlayers=n;
@@ -587,7 +587,7 @@ async function createGame(){
   $('home-err').style.color='var(--muted)';
   try{
     gameId=rnd4();
-    GS={phase:'lobby',players:[{name,pts:0},null,null,null,null,null,null,null],subjects:[],qSeq:[],rt:0,ri:0,votes:{},sa:-1,ready:{},maxPlayers:8};
+    GS={phase:'lobby',players:[{name,pts:0},null,null,null],subjects:[],qSeq:[],rt:0,ri:0,votes:{},sa:-1,ready:{},maxPlayers:4};
     await fbPut(`games/${gameId}`,GS);
     mySlot=0;isHost=true;
     sessionStorage.setItem('ego_sess',JSON.stringify({gameId,mySlot}));
@@ -612,6 +612,10 @@ async function joinGame(){
   try{
     const gs=await fbGet(`games/${code}`);
     if(!gs){showErr('home-err','❌ Nie znaleziono gry. Sprawdź kod.');$('home-err').style.color='var(--c0)';return;}
+    if(gs.phase && gs.phase!=='lobby'){
+      showErr('home-err','❌ Ta gra już się rozpoczęła. Poczekaj na kolejną rozgrywkę.');
+      $('home-err').style.color='var(--c0)';return;
+    }
     gameId=code;GS=norm(gs);
     sessionStorage.setItem('ego_name',name);
     hideErr('home-err');
@@ -656,7 +660,7 @@ function changeSlotName(){
 function renderSlotsGrid(gs,name){
   const grid=$('slot-grid');if(!grid)return;
   grid.innerHTML='';
-  const max=gs.maxPlayers||8;
+  const max=gs.maxPlayers||4;
   for(let i=0;i<8;i++){
     if(i>=max) continue;
     const p=gs.players[i];
@@ -712,7 +716,7 @@ function renderLobby(){
   $('lob-code').textContent=gameId||'----';
   const ready=GS.ready||{};
   const players=GS.players;
-  const max=GS.maxPlayers||8;
+  const max=GS.maxPlayers||4;
   const activePlayers=players.slice(0,max);
   const filled=activePlayers.filter(Boolean).length;
   $('lob-cnt').textContent=`Gracze (${filled}/${max})`;
@@ -928,7 +932,8 @@ const amSJ=()=>mySlot===SI();
 
 function mkSbar(id){
   const el=$(id);if(!el||!GS)return;
-  el.innerHTML=GS.players.map((p,i)=>p
+  const max=GS.maxPlayers||4;
+  el.innerHTML=GS.players.slice(0,max).map((p,i)=>p
     ?`<div class="sbi"><div class="sbi-n" style="color:${C(i)}">${p.name}</div><div class="sbi-v" style="color:${C(i)}">${p.pts}</div></div>`
     :''
   ).join('');
@@ -1178,7 +1183,7 @@ function renderReveal(){
   }
 
   // ── QUESTION (compact, under banner) ──
-  bannerHtml+=`<div style="background:var(--card);border:1.5px solid var(--rim);border-radius:12px;padding:14px 16px">
+  bannerHtml+=`<div style="background:var(--card);border:1.5px solid var(--rim);border-radius:12px;padding:14px 16px;margin-top:12px">
     <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Runda ${ri} / ${tot} · Pytanie o <strong style="color:${C(si)}">${sp.name}</strong></div>
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.3px;line-height:1.35">${q.q.replace('[imię]',sp.name)}</div>
   </div>`;
@@ -1188,36 +1193,36 @@ function renderReveal(){
   // ── ANSWERS ──
   const ac=$('rv-ans'); ac.innerHTML='';
   q.a.forEach((a,i)=>{
-    const btn=document.createElement('button');
     const isCorrect=i==correct;
     const isMyVote=!iAmSubject&&i==myVote;
+    const voters=GS.players.filter((p,pi)=>p&&pi!==si&&GS.votes[pi]==i);
+    const hasChips=voters.length>0||isMyVote;
+
+    const btn=document.createElement('button');
     btn.className='abtn locked'+(isCorrect?' correct':'');
     if(isMyVote&&!isCorrect) btn.style.cssText='border-color:#dc2626;background:#450a0a;pointer-events:none;cursor:default;';
-    const myTag=isMyVote
-      ?`<span style="margin-left:auto;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:${isCorrect?'#16a34a':'#dc2626'};color:#fff;white-space:nowrap">${isCorrect?'TY ✓':'TY ✗'}</span>`:'';
-    btn.innerHTML=`<div class="anum">${i+1}</div><span style="flex:1;min-width:0">${a}</span>${myTag}`;
-    const voters=GS.players.filter((p,pi)=>p&&pi!==si&&GS.votes[pi]==i);
-    if(voters.length || isMyVote){
-      const row=document.createElement('div');
-      row.style.cssText='display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;align-items:center;grid-column:2';
-      if(isMyVote){
-        row.innerHTML=`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:${isCorrect?'#16a34a':'#dc2626'};color:#fff;white-space:nowrap">${isCorrect?'TY ✓':'TY ✗'}</span>`;
-      }
+    btn.style.flexDirection='column';
+    btn.style.alignItems='stretch';
+    btn.style.gap='0';
+
+    // Top row: number + text
+    let topHtml=`<div style="display:flex;align-items:center;gap:12px">
+      <div class="anum" style="${isCorrect?'background:var(--c2);color:var(--bg);border-color:var(--c2);':isMyVote&&!isCorrect?'background:#dc2626;color:#fff;border-color:#dc2626;':''}">${i+1}</div>
+      <span style="flex:1;text-align:left">${a}</span>
+    </div>`;
+
+    // Chips row
+    let chipsHtml='';
+    if(hasChips){
+      let chips='';
+      if(isMyVote) chips+=`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:${isCorrect?'#16a34a':'#dc2626'};color:#fff;white-space:nowrap">${isCorrect?'TY ✓':'TY ✗'}</span>`;
       voters.forEach(v=>{const pi=GS.players.indexOf(v),hit=i==correct;
-        row.innerHTML+=`<span class="vchip" style="background:${C(pi)}22;color:${C(pi)};border:1px solid ${C(pi)}44">${hit?'✓':'✗'} ${v.name}</span>`;
+        chips+=`<span class="vchip" style="background:${C(pi)}22;color:${C(pi)};border:1px solid ${C(pi)}44">${hit?'✓':'✗'} ${v.name}</span>`;
       });
-      // Wrap button content in a column layout
-      btn.style.flexDirection='column';
-      btn.style.alignItems='flex-start';
-      const top=document.createElement('div');
-      top.style.cssText='display:flex;align-items:center;gap:12px;width:100%';
-      const numEl=btn.querySelector('.anum');
-      const textEl=btn.querySelector('span:not(.anum)');
-      if(numEl&&textEl){top.appendChild(numEl);top.appendChild(textEl);}
-      btn.innerHTML='';
-      btn.appendChild(top);
-      btn.appendChild(row);
+      chipsHtml=`<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;padding-left:46px">${chips}</div>`;
     }
+
+    btn.innerHTML=topHtml+chipsHtml;
     ac.appendChild(btn);
   });
 
@@ -1226,7 +1231,7 @@ function renderReveal(){
   $('rv-res').innerHTML=`<div class="rctitle">Wyniki rundy</div>
     <div class="rvrow"><div class="rvl"><div class="rvdot" style="background:${C(si)}"></div><strong>${sp.name}</strong><span class="badge b-sub" style="margin-left:8px">Temat</span></div><span class="badge ${subjPts>0?'b-yes':'b-no'}">+${subjPts} ${subjPts===1?'pkt':'pkt'}</span></div>`+
     GS.players.map((p,i)=>{if(!p||i===si)return'';const hit=GS.votes[i]==correct;
-      return`<div class="rvrow${i===mySlot?' style="background:var(--rim);border-radius:8px;padding:9px 8px;margin:0 -8px"':''}"><div class="rvl"><div class="rvdot" style="background:${C(i)}"></div><span${i===mySlot?' style="font-weight:700"':''}>${p.name}${i===mySlot?' (ty)':''}</span></div><span class="badge ${hit?'b-yes':'b-no'}">${hit?'+1 pkt ✓':'Pudło ✗'}</span></div>`;
+      return`<div class="rvrow${i===mySlot?' style="background:var(--rim);border-radius:8px;padding:9px 8px;margin:0 -8px"':''}"><div class="rvl"><div class="rvdot" style="background:${C(i)}"></div><span${i===mySlot?' style="font-weight:700"':''}>${p.name}${i===mySlot?' (ty)':''}</span></div><span class="badge ${hit?'b-yes':'b-no'}">${hit?'+1 pkt':'Pudło'}</span></div>`;
     }).join('');
 
   const isLast=GS.ri+1>=GS.rt;
