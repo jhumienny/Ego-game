@@ -1091,7 +1091,7 @@ function renderSubj(){
   $('qc-sj').style.setProperty('--ac',C(si));
   const ri=GS.ri+1,tot=GS.rt;
 
-  // Non-subject players wait
+  // Non-subject players see wait screen
   if(!amSJ()){
     setWait(C(si),sp.name,`${sp.name} wybiera odpowiedź…`,
       'Twoja kolej zaraz — poczekaj!',
@@ -1099,38 +1099,36 @@ function renderSubj(){
     show('s-wait'); return;
   }
 
+  // Subject screen
   $('sj-meta').textContent=`Runda ${ri} / ${tot} — To pytanie jest o Tobie!`;
   $('sj-about').textContent=`Odpowiedz szczerze, ${sp.name}!`;
   $('sj-q').textContent=q.q.replace('[imię]',sp.name);
 
-  // Swap button always shown at top (before or after selection, until confirmed)
+  // Build answer buttons — always unlocked so subject can change
+  const ac=$('sj-ans'); ac.innerHTML='';
+  q.a.forEach((a,i)=>{
+    const btn=document.createElement('button');
+    btn.className='abtn';
+    if(i==_sjPending){
+      btn.classList.add('chosen');
+      btn.style.borderColor='var(--text)';
+      btn.querySelector?.('.anum')?.style; // will set below
+    }
+    btn.innerHTML=`<div class="anum" style="${i==_sjPending?'background:var(--text);color:var(--bg);border-color:var(--text);':''}">${i+1}</div><span>${a}</span>`;
+    btn.onclick=()=>{ _sjPending=i; renderSubj(); };
+    ac.appendChild(btn);
+  });
+
+  // Swap button — always visible, at top
   const sb=$('btn-swap-sj');
   sb.style.display='block';
   sb.textContent=_swapBtnLabel(_sjSwapsLeft);
   sb.disabled=_sjSwapsLeft<=0;
   sb.style.opacity=_sjSwapsLeft>0?'1':'0.4';
 
-  if(_sjPending!==null){
-    // Already picked — allow changing + show confirm
-    buildAns('sj-ans',q.a,false,null,null,i=>{
-      _sjPending=i; renderSubj();
-    });
-    // Highlight chosen
-    const btns=document.querySelectorAll('#sj-ans .abtn');
-    btns.forEach((b,bi)=>{
-      if(bi==_sjPending){
-        b.classList.add('chosen');
-        b.querySelector('.anum').style.background='var(--text)';
-        b.querySelector('.anum').style.color='var(--bg)';
-      }
-    });
-    $('btn-sj').style.display='block';
-  } else {
-    buildAns('sj-ans',q.a,false,null,null,i=>{
-      _sjPending=i; renderSubj();
-    });
-    $('btn-sj').style.display='none';
-  }
+  // Confirm button — only after picking
+  $('btn-sj').style.display=_sjPending!==null?'block':'none';
+
   show('s-subj');
 }
 
