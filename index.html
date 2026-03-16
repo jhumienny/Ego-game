@@ -1238,9 +1238,8 @@ function startPoll(){
       if(!gs){clearInterval(pollTimer);return;}
       GS=norm(gs);
 
-      // Always re-render lobby immediately when in lobby phase
-      if(GS.phase==='lobby'){
-        console.log('[LOBBY POLL] players:', JSON.stringify(GS.players.slice(0,4).map(p=>p?p.name:'null')));
+      // Always re-render lobby immediately when in lobby phase — but only if player is in lobby, not on slot-pick screen
+      if(GS.phase==='lobby' && mySlot!==null && !$('s-slots').classList.contains('on')){
         renderLobby();
       }
 
@@ -1575,7 +1574,7 @@ function renderLobby(){
       ? `<span class="cdot dok"></span>Wszyscy gotowi! Gra startuje za chwilę…`
       : `<span class="cdot dwait"></span>Gotowych: ${readyCount}/${filled} — czekaj na pozostałych`;
   }
-  show('s-lobby');
+  // Note: show('s-lobby') is NOT called here — renderLobby only updates content, screen switching is done explicitly
 }
 
 async function toggleReady(){
