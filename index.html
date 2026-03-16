@@ -143,12 +143,28 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 <div class="scr" id="s-qbrowser">
   <div style="display:flex;align-items:center;gap:10px">
     <button onclick="show('s-home')" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:0;line-height:1">←</button>
-    <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)">Baza pytań</div>
+    <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);flex:1">Baza pytań</div>
+    <button onclick="openCatManager()" style="background:var(--card);border:1.5px solid var(--rim);border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer">🏷 Kategorie</button>
   </div>
+
+  <!-- Tabs -->
   <div style="display:flex;gap:6px">
     <button id="qtab-all" onclick="setQTab('all')" style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;background:var(--text);color:var(--bg);border:none">Wszystkie</button>
     <button id="qtab-reported" onclick="setQTab('reported')" style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;background:var(--card);color:var(--muted);border:1.5px solid var(--rim);position:relative">Zgłoszone <span id="qtab-reported-count" style="display:none;background:#dc2626;color:#fff;font-size:9px;padding:1px 5px;border-radius:99px;margin-left:3px"></span></button>
   </div>
+
+  <!-- Category filter -->
+  <div id="qb-cat-filter" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+
+  <!-- Bulk action bar (shown when items checked) -->
+  <div id="qb-bulk-bar" style="display:none;background:#1e1b4b;border:1.5px solid #534AB7;border-radius:10px;padding:10px 12px;display:none;flex-direction:column;gap:8px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span id="qb-bulk-count" style="font-size:12px;color:#a5b4fc;flex:1">0 zaznaczonych</span>
+      <button onclick="clearBulkSelection()" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer">Odznacz</button>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap" id="qb-bulk-cats"></div>
+  </div>
+
   <div style="display:flex;align-items:center;gap:8px">
     <div style="font-size:11px;color:var(--muted);flex:1" id="qb-count"></div>
     <button id="qb-copy-btn" onclick="copyMarkedForReview()" style="display:none;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;background:var(--card);color:var(--muted);border:1.5px solid var(--rim);white-space:nowrap">📋 Kopiuj</button>
@@ -2256,12 +2272,167 @@ let _qMarkedView=false;
 let _qColors={};
 let _qTab='all'; // 'all' | 'reported'
 let _qReported={}; // idx → true
+let _qCats={};        // {catId: {name, color}} — category definitions
+let _qCatMap={};      // {idx: [catId, ...]} — which cats each question belongs to
+let _activeCatFilter=null; // null = all, or catId
+let _bulkSelected=new Set(); // indices selected for bulk category assign
 
-// Load saved colors and reported
+// Load saved colors, reported, categories
 (()=>{
   try{ _qColors=JSON.parse(localStorage.getItem('wiem_qcolors')||'{}'); }catch(e){}
   try{ _qReported=JSON.parse(localStorage.getItem('wiem_qreported')||'{}'); }catch(e){}
+  try{ _qCats=JSON.parse(localStorage.getItem('wiem_cats')||'{}'); }catch(e){}
+  try{ _qCatMap=JSON.parse(localStorage.getItem('wiem_catmap')||'{}'); }catch(e){}
 })();
+
+const CAT_COLORS=['#7c3aed','#0891b2','#059669','#d97706','#dc2626','#db2777','#4338ca','#0284c7'];
+
+function saveCats(){
+  try{ localStorage.setItem('wiem_cats',JSON.stringify(_qCats)); }catch(e){}
+  try{ localStorage.setItem('wiem_catmap',JSON.stringify(_qCatMap)); }catch(e){}
+}
+
+// ── CATEGORY MANAGER ──
+function openCatManager(){
+  renderCatManager();
+  $('cat-modal').style.display='flex';
+  setTimeout(()=>{ const i=$('cat-new-inp'); if(i)i.focus(); },50);
+}
+function closeCatManager(){
+  $('cat-modal').style.display='none';
+  renderCatFilter();
+}
+
+function addCategory(){
+  const inp=$('cat-new-inp');
+  const name=(inp?.value||'').trim();
+  if(!name)return;
+  // Check duplicate
+  if(Object.values(_qCats).some(c=>c.name.toLowerCase()===name.toLowerCase())){
+    inp.style.borderColor='var(--c0)';
+    setTimeout(()=>inp.style.borderColor='',1500);
+    return;
+  }
+  const id='cat_'+Date.now();
+  const usedColors=Object.values(_qCats).map(c=>c.color);
+  const color=CAT_COLORS.find(c=>!usedColors.includes(c))||CAT_COLORS[Object.keys(_qCats).length%CAT_COLORS.length];
+  _qCats[id]={name, color};
+  saveCats();
+  if(inp){ inp.value=''; inp.focus(); }
+  renderCatManager();
+}
+
+function deleteCategory(id){
+  delete _qCats[id];
+  // Remove from all question assignments
+  Object.keys(_qCatMap).forEach(idx=>{
+    _qCatMap[idx]=(_qCatMap[idx]||[]).filter(c=>c!==id);
+    if(_qCatMap[idx].length===0) delete _qCatMap[idx];
+  });
+  if(_activeCatFilter===id) _activeCatFilter=null;
+  saveCats();
+  renderCatManager();
+}
+
+function renderCatManager(){
+  const list=$('cat-list-mgr');
+  if(!list)return;
+  const cats=Object.entries(_qCats);
+  if(cats.length===0){
+    list.innerHTML=`<div style="text-align:center;color:var(--muted);font-size:12px;padding:8px 0">Brak kategorii — dodaj pierwszą poniżej</div>`;
+    return;
+  }
+  list.innerHTML=cats.map(([id,cat])=>{
+    const count=Object.values(_qCatMap).filter(arr=>arr&&arr.includes(id)).length;
+    return`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border-radius:8px">
+      <div style="width:12px;height:12px;border-radius:50%;background:${cat.color};flex-shrink:0"></div>
+      <span style="flex:1;font-size:13px;font-weight:600">${cat.name}</span>
+      <span style="font-size:11px;color:var(--muted)">${count} pytań</span>
+      <button onclick="deleteCategory('${id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0;line-height:1" title="Usuń kategorię">🗑</button>
+    </div>`;
+  }).join('');
+}
+
+// ── CATEGORY FILTER BAR ──
+function renderCatFilter(){
+  const bar=$('qb-cat-filter');
+  if(!bar)return;
+  const cats=Object.entries(_qCats);
+  if(cats.length===0){ bar.innerHTML=''; return; }
+  bar.innerHTML=`
+    <button onclick="setCatFilter(null)" style="padding:5px 12px;border-radius:99px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid ${_activeCatFilter===null?'var(--text)':'var(--rim)'};background:${_activeCatFilter===null?'var(--text)':'transparent'};color:${_activeCatFilter===null?'var(--bg)':'var(--muted)'}">Wszystkie</button>
+    ${cats.map(([id,cat])=>{
+      const active=_activeCatFilter===id;
+      return`<button onclick="setCatFilter('${id}')" style="padding:5px 12px;border-radius:99px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid ${active?cat.color:cat.color+'44'};background:${active?cat.color+'22':'transparent'};color:${active?cat.color:'var(--muted)'}">${cat.name}</button>`;
+    }).join('')}`;
+}
+
+function setCatFilter(id){
+  _activeCatFilter=id;
+  renderCatFilter();
+  renderQBrowser();
+}
+
+// ── BULK SELECTION ──
+function toggleBulkSelect(idx){
+  if(_bulkSelected.has(idx)) _bulkSelected.delete(idx);
+  else _bulkSelected.add(idx);
+  updateBulkBar();
+  // Update card border
+  const card=$('qcard-'+idx);
+  if(card){
+    const base=getCardBorder(idx);
+    card.style.borderColor=_bulkSelected.has(idx)?'#f59e0b':base;
+  }
+}
+
+function clearBulkSelection(){
+  _bulkSelected.forEach(idx=>{
+    const card=$('qcard-'+idx);
+    if(card) card.style.borderColor=getCardBorder(idx);
+  });
+  _bulkSelected.clear();
+  updateBulkBar();
+}
+
+function updateBulkBar(){
+  const bar=$('qb-bulk-bar');
+  const countEl=$('qb-bulk-count');
+  const catsEl=$('qb-bulk-cats');
+  if(!bar)return;
+  const n=_bulkSelected.size;
+  bar.style.display=n>0?'flex':'none';
+  if(countEl) countEl.textContent=`${n} zaznaczonych`;
+  if(catsEl){
+    const cats=Object.entries(_qCats);
+    if(cats.length===0){
+      catsEl.innerHTML=`<span style="font-size:11px;color:var(--muted)">Najpierw utwórz kategorie →</span>`;
+    } else {
+      catsEl.innerHTML=cats.map(([id,cat])=>
+        `<button onclick="assignBulkToCat('${id}')" style="padding:5px 12px;border-radius:99px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid ${cat.color};background:${cat.color}22;color:${cat.color}">+ ${cat.name}</button>`
+      ).join('');
+    }
+  }
+}
+
+function assignBulkToCat(catId){
+  _bulkSelected.forEach(idx=>{
+    if(!_qCatMap[idx]) _qCatMap[idx]=[];
+    if(!_qCatMap[idx].includes(catId)) _qCatMap[idx].push(catId);
+  });
+  saveCats();
+  clearBulkSelection();
+  renderQBrowser();
+}
+
+function removeCatFromQ(idx, e){
+  e.stopPropagation();
+  // Show mini picker to remove specific cat
+  delete _qCatMap[idx];
+  saveCats();
+  const card=$('qcard-'+idx);
+  if(card){ renderQCard(card,idx,false); const cr=card.querySelector('[id^="qcolor-"]'); if(cr) updateColorBtns(cr,idx); }
+}
 
 let _reportedThisQ=false; // track if current question was reported this render cycle
 
@@ -2410,7 +2581,9 @@ function sha256(str){
 
 function openQBrowser(){
   if(sessionStorage.getItem('admin_ok')==='1'){
-    _qMarkedView=false; setQTab(_qTab); updateReportedTabCount(); show('s-qbrowser');
+    _qMarkedView=false; setQTab(_qTab); updateReportedTabCount();
+    renderCatFilter();
+    show('s-qbrowser');
     return;
   }
   const modal=$('admin-modal');
@@ -2526,13 +2699,18 @@ function renderQBrowser(){
     return;
   }
 
-  const indices=QS.map((_,i)=>i).filter(i=>_qMarkedView?_qMarked.has(i):true);
+  let indices=QS.map((_,i)=>i).filter(i=>_qMarkedView?_qMarked.has(i):true);
+  // Apply category filter
+  if(_activeCatFilter){
+    indices=indices.filter(i=>(_qCatMap[i]||[]).includes(_activeCatFilter));
+  }
   if(countEl) countEl.textContent=_qMarkedView?`${indices.length} zaznaczonych`:`${indices.length} pytań`;
 
   indices.forEach(realIdx=>{
     const div=document.createElement('div');
     div.id='qcard-'+realIdx;
-    div.style.cssText=`background:var(--card);border:1.5px solid ${getCardBorder(realIdx)};border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px`;
+    const border=_bulkSelected.has(realIdx)?'#f59e0b':getCardBorder(realIdx);
+    div.style.cssText=`background:var(--card);border:1.5px solid ${border};border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px`;
     renderQCard(div, realIdx, _qMarkedView);
     list.appendChild(div);
     const colorRow=div.querySelector('[id^="qcolor-"]');
@@ -2540,6 +2718,7 @@ function renderQBrowser(){
   });
 
   updateMarkedBtn();
+  updateBulkBar();
 }
 
 function renderQCardReported(div, idx, editing){
@@ -2619,8 +2798,15 @@ function renderQCard(div, idx, editing){
   const hasName=item.q.includes('[imię]');
 
   if(!editing){
+    // Build category chips
+    const myCats=(_qCatMap[idx]||[]).map(id=>_qCats[id]).filter(Boolean);
+    const catChips=myCats.length>0
+      ? `<div style="display:flex;flex-wrap:wrap;gap:4px;padding-top:4px">${myCats.map(c=>`<span style="padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;background:${c.color}22;color:${c.color};border:1px solid ${c.color}55">${c.name}</span>`).join('')}<button onclick="removeCatFromQ(${idx},event)" style="padding:2px 6px;border-radius:99px;font-size:9px;background:none;border:1px solid var(--rim);color:var(--muted);cursor:pointer" title="Usuń z kategorii">✕</button></div>`
+      : '';
     div.innerHTML=`
       <div style="display:flex;align-items:flex-start;gap:8px">
+        <input type="checkbox" id="qbulk-${idx}" ${_bulkSelected.has(idx)?'checked':''} onchange="toggleBulkSelect(${idx})"
+          style="margin-top:2px;width:15px;height:15px;accent-color:#f59e0b;flex-shrink:0;cursor:pointer" title="Zaznacz do kategorii">
         <input type="checkbox" id="qcb-${idx}" ${_qMarked.has(idx)?'checked':''} onchange="toggleCheck(${idx})"
           style="margin-top:2px;width:15px;height:15px;accent-color:#7F77DD;flex-shrink:0;cursor:pointer">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1">
@@ -2632,6 +2818,7 @@ function renderQCard(div, idx, editing){
           <button onclick="startEditQ(${idx})" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:0;line-height:1" title="Edytuj">✏️</button>
         </div>
       </div>
+      ${catChips}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px solid var(--rim);padding-top:8px">
         ${[0,1,2].map(j=>`
           <div style="display:flex;align-items:center;gap:6px;font-size:11px">
@@ -2730,6 +2917,23 @@ function saveEditQ(idx){
     <div style="display:flex;gap:8px">
       <button onclick="closeAdminModal()" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--rim);background:var(--card);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer">Anuluj</button>
       <button onclick="submitAdminPw()" style="flex:1;padding:10px;border-radius:10px;border:none;background:var(--text);color:var(--bg);font-size:13px;font-weight:700;cursor:pointer">Wejdź →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CATEGORY MANAGER MODAL ══ -->
+<div id="cat-modal" style="display:none;position:fixed;inset:0;background:#000a;z-index:9999;align-items:center;justify-content:center">
+  <div style="background:var(--card);border:1.5px solid var(--rim);border-radius:16px;padding:20px;width:min(340px,92vw);display:flex;flex-direction:column;gap:12px;max-height:80vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);flex:1">🏷 Zarządzaj kategoriami</div>
+      <button onclick="closeCatManager()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:0;line-height:1">×</button>
+    </div>
+    <div id="cat-list-mgr" style="display:flex;flex-direction:column;gap:6px"></div>
+    <div style="display:flex;gap:6px">
+      <input id="cat-new-inp" type="text" placeholder="Nowa kategoria…" maxlength="24"
+        style="flex:1;background:var(--bg);border:1.5px solid var(--rim);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--text);font-family:inherit"
+        onkeydown="event.stopPropagation();if(event.key==='Enter')addCategory()">
+      <button onclick="addCategory()" style="padding:8px 14px;border-radius:8px;border:none;background:var(--text);color:var(--bg);font-size:13px;font-weight:700;cursor:pointer">+</button>
     </div>
   </div>
 </div>
