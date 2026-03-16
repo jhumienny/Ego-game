@@ -151,39 +151,44 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   <!-- Add new question form -->
   <div id="qb-add-form" style="display:none;background:#0f172a;border:1.5px solid #534AB7;border-radius:12px;padding:14px;flex-direction:column;gap:10px">
     <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#a78bfa;font-weight:700">Nowe pytanie</div>
-    <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Treść <span style="color:var(--c3)">(opcjonalnie użyj [imię] dla gracza Temat)</span></div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);flex:1">Treść <span style="color:var(--c3)">(opcjonalnie użyj [imię] dla gracza Temat)</span></div>
+      <button id="nq-type-btn" onclick="toggleNewQType()" style="padding:4px 10px;border-radius:99px;font-size:10px;font-weight:700;cursor:pointer;border:1.5px solid var(--rim);background:transparent;color:var(--muted);" title="Typ odpowiedzi">📝 Własne</button>
+    </div>
     <textarea id="nq-q" placeholder="Jak [imię] spędza wolny weekend?" style="width:100%;background:var(--bg);border:1.5px solid var(--rim);border-radius:8px;padding:8px;font-size:12px;color:var(--text);font-family:inherit;resize:vertical;min-height:52px"
       oninput="updateNewQPreview()" onkeydown="event.stopPropagation()"></textarea>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-      <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Odpowiedzi</div>
-      <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#a78bfa66">Podgląd dla Tematu</div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:center">
-      <div style="display:flex;align-items:center;gap:6px">
-        <div style="width:18px;height:18px;border-radius:4px;background:var(--rim);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">1</div>
-        <input id="nq-a1" type="text" placeholder="Odpowiedź 1…"
-          style="flex:1;min-width:0;background:var(--bg);border:1.5px solid var(--rim);border-radius:8px;padding:6px 8px;font-size:11px;color:var(--text);font-family:inherit"
-          oninput="updateNewQPreview()" onkeydown="event.stopPropagation()">
+    <div id="nq-answers-section">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+        <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Odpowiedzi</div>
+        <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#a78bfa66">Podgląd dla Tematu</div>
       </div>
-      <div id="nq-prev1" style="font-size:11px;color:#a78bfa99;padding:0 4px;line-height:1.4">—</div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:center">
-      <div style="display:flex;align-items:center;gap:6px">
-        <div style="width:18px;height:18px;border-radius:4px;background:var(--rim);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">2</div>
-        <input id="nq-a2" type="text" placeholder="Odpowiedź 2…"
-          style="flex:1;min-width:0;background:var(--bg);border:1.5px solid var(--rim);border-radius:8px;padding:6px 8px;font-size:11px;color:var(--text);font-family:inherit"
-          oninput="updateNewQPreview()" onkeydown="event.stopPropagation()">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:center">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:18px;height:18px;border-radius:4px;background:var(--rim);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">1</div>
+            <input id="nq-a1" type="text" placeholder="Odpowiedź 1…" style="flex:1;min-width:0;background:var(--bg);border:1.5px solid var(--rim);border-radius:8px;padding:6px 8px;font-size:11px;color:var(--text);font-family:inherit" oninput="updateNewQPreview()" onkeydown="event.stopPropagation()">
+          </div>
+          <div id="nq-prev1" style="font-size:11px;color:#a78bfa99;padding:0 4px;line-height:1.4">—</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:center">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:18px;height:18px;border-radius:4px;background:var(--rim);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">2</div>
+            <input id="nq-a2" type="text" placeholder="Odpowiedź 2…" style="flex:1;min-width:0;background:var(--bg);border:1.5px solid var(--rim);border-radius:8px;padding:6px 8px;font-size:11px;color:var(--text);font-family:inherit" oninput="updateNewQPreview()" onkeydown="event.stopPropagation()">
+          </div>
+          <div id="nq-prev2" style="font-size:11px;color:#a78bfa99;padding:0 4px;line-height:1.4">—</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:center">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:18px;height:18px;border-radius:4px;background:var(--rim);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">3</div>
+            <input id="nq-a3" type="text" placeholder="Odpowiedź 3…" style="flex:1;min-width:0;background:var(--bg);border:1.5px solid var(--rim);border-radius:8px;padding:6px 8px;font-size:11px;color:var(--text);font-family:inherit" oninput="updateNewQPreview()" onkeydown="event.stopPropagation()">
+          </div>
+          <div id="nq-prev3" style="font-size:11px;color:#a78bfa99;padding:0 4px;line-height:1.4">—</div>
+        </div>
       </div>
-      <div id="nq-prev2" style="font-size:11px;color:#a78bfa99;padding:0 4px;line-height:1.4">—</div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:center">
-      <div style="display:flex;align-items:center;gap:6px">
-        <div style="width:18px;height:18px;border-radius:4px;background:var(--rim);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">3</div>
-        <input id="nq-a3" type="text" placeholder="Odpowiedź 3…"
-          style="flex:1;min-width:0;background:var(--bg);border:1.5px solid var(--rim);border-radius:8px;padding:6px 8px;font-size:11px;color:var(--text);font-family:inherit"
-          oninput="updateNewQPreview()" onkeydown="event.stopPropagation()">
-      </div>
-      <div id="nq-prev3" style="font-size:11px;color:#a78bfa99;padding:0 4px;line-height:1.4">—</div>
+    <div id="nq-players-section" style="display:none;background:var(--bg);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted);text-align:center;line-height:1.6">
+      👥 Odpowiedziami będą <strong style="color:var(--text)">imiona graczy</strong> w danej rundzie<br>
+      <span style="font-size:10px">(gracz Temat nie pojawia się wśród opcji)</span>
     </div>
     <div style="display:flex;gap:8px;margin-top:2px">
       <button onclick="saveNewQuestion()" style="flex:1;background:var(--text);color:var(--bg);border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">Dodaj pytanie ✓</button>
@@ -766,6 +771,7 @@ function norm(gs){
   gs.maxPlayers = gs.maxPlayers || 4;
   gs.swapAt     = gs.swapAt || null;
   gs.gameMode   = gs.gameMode || 'rounds';
+  gs.qAnswers   = gs.qAnswers || {};
   gs.usedQs     = gs.usedQs ? (Array.isArray(gs.usedQs)?gs.usedQs:Object.values(gs.usedQs)) : [];
   // Normalize vote keys AND values to integers
   if(gs.votes && typeof gs.votes==='object'){
@@ -889,8 +895,19 @@ function startPoll(){
               const qPoolFinal=qPool.length>0?qPool:QS.map((_,i)=>i);
               let qp=shuf([...qPoolFinal]);
               while(qp.length<sub.length)qp=[...qp,...shuf([...qPoolFinal])];
+              const qSeq=qp.slice(0,sub.length);
               const playerCount=GS.players.filter(Boolean).length;
-              GS={...GS,phase:'subject',gameMode:mode,subjects:sub,qSeq:qp.slice(0,sub.length),rt:sub.length,ri:0,votes:{},bets:{},sa:-1,ready:{},pool:playerCount*10};
+              const playerNames=GS.players.map((p,i)=>p?{name:p.name,slot:i}:null).filter(Boolean);
+              const qAnswers={};
+              qSeq.forEach((qIdx,ri)=>{
+                const qq=QS[qIdx];
+                if(qq&&qq.type==='players'){
+                  const subjSlot=sub[ri];
+                  const opts=playerNames.filter(p=>p.slot!==subjSlot).map(p=>p.name);
+                  if(opts.length>0) qAnswers[ri]=opts;
+                }
+              });
+              GS={...GS,phase:'subject',gameMode:mode,subjects:sub,qSeq,qAnswers,rt:sub.length,ri:0,votes:{},bets:{},sa:-1,ready:{},pool:playerCount*10};
               await writeGS();
             }
           } else {
@@ -1265,6 +1282,13 @@ async function leaveGame(){
 }
 
 // ── HOST START ──
+// Returns answers for current round — either static or player-name-based
+function getQAnswers(ri){
+  if(GS.qAnswers && GS.qAnswers[ri]) return GS.qAnswers[ri];
+  const q=QS[GS.qSeq[ri]];
+  return q?q.a:[];
+}
+
 async function hostStart(){
   if(!isHost)return;
   const ps=GS.players.filter(Boolean);
@@ -1280,7 +1304,6 @@ async function hostStart(){
     const rpp=Math.max(1,parseInt($('rpp').value)||3);
     for(let r=0;r<rpp;r++) sub=[...(sub||[]),...shuf([...idx])];
   } else {
-    // Pool mode: pre-generate a big queue (100 rounds max), game ends by token logic
     for(let r=0;r<100;r++) sub=[...(sub||[]),...shuf([...idx])];
   }
   const qPool=_selectedCat
@@ -1289,7 +1312,22 @@ async function hostStart(){
   const qPoolFinal=qPool.length>0?qPool:QS.map((_,i)=>i);
   qp=shuf([...qPoolFinal]);
   while(qp.length<sub.length) qp=[...qp,...shuf([...qPoolFinal])];
-  GS={...GS,phase:'subject',gameMode:mode,subjects:sub,qSeq:qp.slice(0,sub.length),rt:sub.length,ri:0,votes:{},bets:{},sa:-1,ready:{},pool:playerCount*10};
+  const qSeq=qp.slice(0,sub.length);
+
+  // For player-type questions, bake player names as answers
+  const playerNames=GS.players.map((p,i)=>p?{name:p.name,slot:i}:null).filter(Boolean);
+  const qAnswers={};
+  qSeq.forEach((qIdx,ri)=>{
+    const q=QS[qIdx];
+    if(q&&q.type==='players'){
+      // Exclude the subject from their own question options
+      const subjSlot=sub[ri];
+      const opts=playerNames.filter(p=>p.slot!==subjSlot).map(p=>p.name);
+      if(opts.length>0) qAnswers[ri]=opts;
+    }
+  });
+
+  GS={...GS,phase:'subject',gameMode:mode,subjects:sub,qSeq,qAnswers,rt:sub.length,ri:0,votes:{},bets:{},sa:-1,ready:{},pool:playerCount*10};
   await writeGS();render();
 }
 
@@ -1443,7 +1481,7 @@ function renderVoting(){
     $('v-meta').textContent=`Runda ${ri} / ${tot}`;
     $('v-about').innerHTML=`Inni zgadują Twoją odpowiedź…`;
     $('v-q').textContent=q.q.replace('[imię]',sp.name);
-    buildAns('v-ans',q.a,true,GS.sa,null,null);
+    buildAns('v-ans',getQAnswers(GS.ri),true,GS.sa,null,null);
     $('btn-vote').style.display='none';
     $('v-bet').style.display='none';
     $('v-st').innerHTML=`
@@ -1470,14 +1508,14 @@ function renderVoting(){
   const myName=GS.players[mySlot]?.name||'';
 
   if(voted){
-    buildAns('v-ans',q.a,true,shownVote,null,null);
+    buildAns('v-ans',getQAnswers(GS.ri),true,shownVote,null,null);
     $('btn-vote').style.display='none';
     $('v-bet').style.display='none';
     const guessers=GS.players.filter((p,i)=>p&&i!==si);
     const done=guessers.filter((p,gi)=>{const pi=GS.players.indexOf(p);return GS.votes[pi]!==undefined;}).length;
     $('v-st').innerHTML=`<span style="color:var(--c2)">✓ ${gW(myName,'Zatwierdziłeś','Zatwierdziłaś')}!</span> Czekaj na pozostałych… (${done}/${guessers.length})`;
   } else {
-    buildAns('v-ans',q.a,false,null,null,i=>{
+    buildAns('v-ans',getQAnswers(GS.ri),false,null,null,i=>{
       _localVote=i; renderVoting();
     });
     if(_localVote!==null){
@@ -1563,7 +1601,7 @@ function confirmVote(){
   _confirmedVote=_localVote;
   $('btn-vote').style.display='none';
   $('v-bet').style.display='none';
-  buildAns('v-ans',QS[GS.qSeq[GS.ri]].a,true,_confirmedVote,null,null);
+  buildAns('v-ans',getQAnswers(GS.ri),true,_confirmedVote,null,null);
   const myName=GS&&mySlot!==null?GS.players[mySlot]?.name||'':'';
   $('v-st').innerHTML=`<span style="color:var(--c2)">✓ ${gW(myName,'Zatwierdziłeś','Zatwierdziłaś')}! Czekaj na pozostałych…</span>`;
   castVote(_confirmedVote);
@@ -1599,21 +1637,22 @@ function renderSubj(){
   if(!amSJ()){
     setWait(C(si),sp.name,`${sp.name} wybiera odpowiedź…`,
       'Twoja kolej zaraz — poczekaj!',
-      q.q.replace('[imię]',sp.name));
+      q.type==='players'?q.q:q.q.replace('[imię]',sp.name));
     show('s-wait'); return;
   }
 
   // Subject screen
   $('sj-meta').textContent=`Runda ${ri} / ${tot} — To pytanie jest o Tobie!`;
   $('sj-about').textContent=`Odpowiedz szczerze!`;
-  $('sj-q').textContent=qForSubject(q.q);
-
   // Build answer buttons — always unlocked so subject can change
   const ac=$('sj-ans'); ac.innerHTML='';
-  q.a.forEach((a,i)=>{
+  const isPlayerType=q.type==='players';
+  const answers=getQAnswers(GS.ri);
+  $('sj-q').textContent=isPlayerType ? q.q : qForSubject(q.q);
+  answers.forEach((a,i)=>{
     const btn=document.createElement('button');
     btn.className='abtn';
-    const displayAnswer=answerForSubject(a);
+    const displayAnswer=isPlayerType?a:answerForSubject(a);
     btn.innerHTML=`<div class="anum" style="${i==_sjPending?'background:var(--text);color:var(--bg);border-color:var(--text);':''}">${i+1}</div><span>${displayAnswer}</span>`;
     btn.onclick=()=>{ _sjPending=i; renderSubj(); };
     ac.appendChild(btn);
@@ -1693,7 +1732,8 @@ function renderReveal(){
 
   // ── ANSWERS ──
   const ac=$('rv-ans'); ac.innerHTML='';
-  q.a.forEach((a,i)=>{
+  const rvAnswers=getQAnswers(GS.ri);
+  rvAnswers.forEach((a,i)=>{
     const isCorrect=i==correct;
     const isMyVote=!iAmSubject&&i==myVote;
     const voters=GS.players.filter((p,pi)=>p&&pi!==si&&GS.votes[pi]==i);
@@ -2356,9 +2396,16 @@ function renderQCard(div, idx, editing){
   if(!editing){
     // Build category chips
     const myCats=(_qCatMap[idx]||[]).map(id=>_qCats[id]).filter(Boolean);
-    const catChips=myCats.length>0
-      ? `<div style="display:flex;flex-wrap:wrap;gap:4px;padding-top:4px">${myCats.map(c=>`<span style="padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;background:${c.color}22;color:${c.color};border:1px solid ${c.color}55">${c.name}</span>`).join('')}<button onclick="removeCatFromQ(${idx},event)" style="padding:2px 6px;border-radius:99px;font-size:9px;background:none;border:1px solid var(--rim);color:var(--muted);cursor:pointer" title="Usuń z kategorii">✕</button></div>`
+    const isPlayerType=item.type==='players';
+    const catChips=(myCats.length>0||isPlayerType)
+      ? `<div style="display:flex;flex-wrap:wrap;gap:4px;padding-top:4px">
+          ${isPlayerType?`<span style="padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;background:#0c4a6e44;color:#38bdf8;border:1px solid #38bdf855">👥 Gracze</span>`:''}
+          ${myCats.map(c=>`<span style="padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;background:${c.color}22;color:${c.color};border:1px solid ${c.color}55">${c.name}</span>`).join('')}
+          ${myCats.length>0?`<button onclick="removeCatFromQ(${idx},event)" style="padding:2px 6px;border-radius:99px;font-size:9px;background:none;border:1px solid var(--rim);color:var(--muted);cursor:pointer" title="Usuń z kategorii">✕</button>`:''}
+        </div>`
       : '';
+    const isPlayers=item.type==='players';
+    const qOtherDisplay=isPlayers?`${qOther} <span style="font-size:9px;color:#38bdf8;background:#0c4a6e44;padding:2px 6px;border-radius:4px;font-weight:700;vertical-align:middle">👥 GRACZE</span>`:qOther;
     div.innerHTML=`
       <div style="display:flex;align-items:flex-start;gap:8px">
         <input type="checkbox" id="qbulk-${idx}" ${_bulkSelected.has(idx)?'checked':''} onchange="toggleBulkSelect(${idx})"
@@ -2366,8 +2413,8 @@ function renderQCard(div, idx, editing){
         <input type="checkbox" id="qcb-${idx}" ${_qMarked.has(idx)?'checked':''} onchange="toggleCheck(${idx})"
           style="margin-top:2px;width:15px;height:15px;accent-color:#7F77DD;flex-shrink:0;cursor:pointer">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1">
-          <div style="font-size:11px;font-weight:700;line-height:1.4;text-transform:uppercase;letter-spacing:.3px;color:var(--text)">${qOther}</div>
-          <div style="font-size:11px;font-weight:700;line-height:1.4;text-transform:uppercase;letter-spacing:.3px;color:${hasName?'#a78bfa':'var(--muted)'}">${hasName?qSubj:'—'}</div>
+          <div style="font-size:11px;font-weight:700;line-height:1.4;text-transform:uppercase;letter-spacing:.3px;color:var(--text)">${qOtherDisplay}</div>
+          <div style="font-size:11px;font-weight:700;line-height:1.4;text-transform:uppercase;letter-spacing:.3px;color:${hasName?'#a78bfa':'var(--muted)'}">${isPlayers?'<span style="color:#38bdf8;font-size:10px">Imiona graczy w danej rundzie</span>':hasName?qSubj:'—'}</div>
         </div>
         <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
           <div id="qcolor-${idx}" style="display:flex;align-items:center;gap:4px"></div>
@@ -2375,27 +2422,33 @@ function renderQCard(div, idx, editing){
         </div>
       </div>
       ${catChips}
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px solid var(--rim);padding-top:8px">
+      ${isPlayers?'':`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px solid var(--rim);padding-top:8px">
         ${[0,1,2].map(j=>`
           <div style="display:flex;align-items:center;gap:6px;font-size:11px">
             <div style="width:18px;height:18px;border-radius:4px;background:var(--rim);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">${j+1}</div>
-            <span style="color:var(--muted)">${item.a[j]}</span>
+            <span style="color:var(--muted)">${item.a[j]||''}</span>
           </div>
           <div style="display:flex;align-items:center;gap:6px;font-size:11px">
             <div style="width:18px;height:18px;border-radius:4px;background:var(--rim);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">${j+1}</div>
-            <span style="color:${hasName?'#a78bfa66':'var(--muted)'}">${hasName?answerForSubject(item.a[j]):'—'}</span>
+            <span style="color:${hasName?'#a78bfa66':'var(--muted)'}">${hasName?answerForSubject(item.a[j]||''):'—'}</span>
           </div>`).join('')}
-      </div>`;
+      </div>`}`;
   } else {
     div.style.borderColor='#7F77DD';
+    const isPlayers=item.type==='players';
     div.innerHTML=`
       <div style="display:flex;align-items:center;gap:8px">
         <input type="checkbox" id="qcb-${idx}" checked onchange="toggleCheck(${idx})"
           style="width:15px;height:15px;accent-color:#7F77DD;cursor:pointer">
-        <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#a78bfa;font-weight:700">Edycja pytania</div>
+        <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#a78bfa;font-weight:700;flex:1">Edycja pytania</div>
+        <button onclick="toggleEditQType(${idx})" style="padding:3px 8px;border-radius:99px;font-size:10px;font-weight:700;cursor:pointer;border:1.5px solid ${isPlayers?'#38bdf8':'var(--rim)'};background:${isPlayers?'#0c4a6e44':'transparent'};color:${isPlayers?'#38bdf8':'var(--muted)'}">${isPlayers?'👥 Gracze':'📝 Własne'}</button>
       </div>
       <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Treść pytania <span style="color:var(--c3)">(użyj [imię] dla gracza Temat)</span></div>
       <textarea id="eq-q-${idx}" style="width:100%;background:var(--bg);border:1.5px solid var(--rim);border-radius:8px;padding:8px;font-size:12px;color:var(--text);font-family:inherit;resize:vertical;min-height:56px">${item.q}</textarea>
+      ${isPlayers?`
+        <div style="background:var(--bg);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted);text-align:center;line-height:1.6">
+          👥 Odpowiedziami będą <strong style="color:var(--text)">imiona graczy</strong> w danej rundzie
+        </div>`:`
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
         <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Odpowiedzi</div>
         <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#a78bfa66">Podgląd dla Tematu</div>
@@ -2404,12 +2457,12 @@ function renderQCard(div, idx, editing){
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:center">
           <div style="display:flex;align-items:center;gap:6px">
             <div style="width:18px;height:18px;border-radius:4px;background:var(--rim);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">${j+1}</div>
-            <input id="eq-a-${idx}-${j}" type="text" value="${item.a[j].replace(/"/g,'&quot;')}"
+            <input id="eq-a-${idx}-${j}" type="text" value="${(item.a[j]||'').replace(/"/g,'&quot;')}"
               oninput="updateSubjPreview(${idx})"
               style="flex:1;min-width:0;background:var(--bg);border:1.5px solid var(--rim);border-radius:8px;padding:6px 8px;font-size:11px;color:var(--text);font-family:inherit">
           </div>
-          <div id="eq-prev-${idx}-${j}" style="font-size:11px;color:#a78bfa66;padding:0 4px;line-height:1.4">${hasName?answerForSubject(item.a[j]):'—'}</div>
-        </div>`).join('')}
+          <div id="eq-prev-${idx}-${j}" style="font-size:11px;color:#a78bfa66;padding:0 4px;line-height:1.4">${hasName?answerForSubject(item.a[j]||''):'—'}</div>
+        </div>`).join('')}`}
       <div style="display:flex;gap:8px;margin-top:2px">
         <button onclick="saveEditQ(${idx})" style="flex:1;background:var(--text);color:var(--bg);border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">Zapisz</button>
         <button onclick="cancelEditQ(${idx})" style="flex:1;background:var(--card);color:var(--muted);border:1.5px solid var(--rim);border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">Anuluj</button>
@@ -2424,6 +2477,13 @@ function updateSubjPreview(idx){
     const prev=$('eq-prev-'+idx+'-'+j);
     if(inp&&prev) prev.textContent=QS[idx].q.includes('[imię]')?answerForSubject(inp.value):'—';
   });
+}
+
+function toggleEditQType(idx){
+  QS[idx].type=QS[idx].type==='players'?undefined:'players';
+  if(QS[idx].type===undefined) delete QS[idx].type;
+  const div=$('qcard-'+idx);
+  if(div) renderQCard(div,idx,true);
 }
 
 function startEditQ(idx){
@@ -2441,6 +2501,24 @@ function cancelEditQ(idx){
   }
 }
 
+let _newQType='normal'; // 'normal' | 'players'
+
+function toggleNewQType(){
+  _newQType=_newQType==='normal'?'players':'normal';
+  const btn=$('nq-type-btn');
+  const ans=$('nq-answers-section');
+  const pl=$('nq-players-section');
+  if(_newQType==='players'){
+    if(btn){btn.textContent='👥 Gracze';btn.style.borderColor='#38bdf8';btn.style.color='#38bdf8';btn.style.background='#0c4a6e44';}
+    if(ans) ans.style.display='none';
+    if(pl) pl.style.display='block';
+  } else {
+    if(btn){btn.textContent='📝 Własne';btn.style.borderColor='var(--rim)';btn.style.color='var(--muted)';btn.style.background='transparent';}
+    if(ans) ans.style.display='block';
+    if(pl) pl.style.display='none';
+  }
+}
+
 function toggleAddQuestion(){
   const form=$('qb-add-form');
   const btn=$('qb-add-btn');
@@ -2449,49 +2527,49 @@ function toggleAddQuestion(){
   form.style.display=opening?'flex':'none';
   if(btn) btn.style.color=opening?'#a78bfa':'var(--muted)';
   if(opening){
-    // Clear fields
+    _newQType='normal';
+    // Reset type toggle UI
+    const tBtn=$('nq-type-btn');
+    const ans=$('nq-answers-section');
+    const pl=$('nq-players-section');
+    if(tBtn){tBtn.textContent='📝 Własne';tBtn.style.borderColor='var(--rim)';tBtn.style.color='var(--muted)';tBtn.style.background='transparent';}
+    if(ans) ans.style.display='block';
+    if(pl) pl.style.display='none';
     ['nq-q','nq-a1','nq-a2','nq-a3'].forEach(id=>{ const el=$(id); if(el) el.value=''; });
     [1,2,3].forEach(j=>{ const el=$('nq-prev'+j); if(el) el.textContent='—'; });
     setTimeout(()=>{ const q=$('nq-q'); if(q) q.focus(); },50);
   }
 }
 
-function updateNewQPreview(){
-  const q=($('nq-q')?.value||'');
-  const hasName=q.includes('[imię]');
-  [1,2,3].forEach(j=>{
-    const inp=$('nq-a'+j);
-    const prev=$('nq-prev'+j);
-    if(inp&&prev) prev.textContent=hasName&&inp.value?answerForSubject(inp.value):'—';
-  });
-}
-
 function saveNewQuestion(){
   const q=($('nq-q')?.value||'').trim();
   if(!q){ const el=$('nq-q'); if(el){el.style.borderColor='var(--c0)';setTimeout(()=>el.style.borderColor='',1500);} return; }
-  const a=[1,2,3].map(j=>($('nq-a'+j)?.value||'').trim());
-  if(a.some(v=>!v)){
-    [1,2,3].forEach(j=>{ const el=$('nq-a'+j); if(el&&!el.value.trim()){el.style.borderColor='var(--c0)';setTimeout(()=>el.style.borderColor='',1500);} });
-    return;
+
+  let entry;
+  if(_newQType==='players'){
+    entry={q,a:[],type:'players'};
+  } else {
+    const a=[1,2,3].map(j=>($('nq-a'+j)?.value||'').trim());
+    if(a.some(v=>!v)){
+      [1,2,3].forEach(j=>{ const el=$('nq-a'+j); if(el&&!el.value.trim()){el.style.borderColor='var(--c0)';setTimeout(()=>el.style.borderColor='',1500);} });
+      return;
+    }
+    entry={q,a};
   }
-  // Add to QS array
-  QS.push({q,a});
+
+  QS.push(entry);
   const idx=QS.length-1;
-  // Save to localStorage so it persists
   try{
     const saved=JSON.parse(localStorage.getItem('wiem_qs')||'{}');
-    saved[idx]={q,a};
+    saved[idx]=entry;
     localStorage.setItem('wiem_qs',JSON.stringify(saved));
   }catch(e){}
-  // Close form and refresh
   toggleAddQuestion();
   renderQBrowser();
-  // Scroll to new card
   setTimeout(()=>{
     const card=$('qcard-'+idx);
-    if(card) card.scrollIntoView({behavior:'smooth',block:'center'});
-    if(card) card.style.borderColor='var(--c2)';
-    setTimeout(()=>{ if(card) card.style.borderColor=getCardBorder(idx); },2000);
+    if(card){ card.scrollIntoView({behavior:'smooth',block:'center'}); card.style.borderColor='var(--c2)'; }
+    setTimeout(()=>{ const card=$('qcard-'+idx); if(card) card.style.borderColor=getCardBorder(idx); },2000);
   },100);
 }
 
@@ -2499,12 +2577,18 @@ function saveEditQ(idx){
   const qEl=$('eq-q-'+idx);
   const newQ=qEl?qEl.value.trim():'';
   if(!newQ)return;
-  const newA=[0,1,2].map(j=>{ const el=$('eq-a-'+idx+'-'+j); return el?el.value.trim():''; });
-  if(newA.some(a=>!a))return;
-  QS[idx]={q:newQ,a:newA};
+  const isPlayers=QS[idx]?.type==='players';
+  let newA=[];
+  if(!isPlayers){
+    newA=[0,1,2].map(j=>{ const el=$('eq-a-'+idx+'-'+j); return el?el.value.trim():''; });
+    if(newA.some(a=>!a))return;
+  }
+  const entry={q:newQ,a:newA};
+  if(isPlayers) entry.type='players';
+  QS[idx]=entry;
   try{
     const saved=JSON.parse(localStorage.getItem('wiem_qs')||'{}');
-    saved[idx]={q:newQ,a:newA};
+    saved[idx]=entry;
     localStorage.setItem('wiem_qs',JSON.stringify(saved));
   }catch(e){}
   const div=$('qcard-'+idx);
