@@ -142,12 +142,16 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     <button onclick="show('s-home')" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:0;line-height:1">←</button>
     <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)">Baza pytań</div>
   </div>
+  <div style="display:flex;gap:6px">
+    <button id="qtab-all" onclick="setQTab('all')" style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;background:var(--text);color:var(--bg);border:none">Wszystkie</button>
+    <button id="qtab-reported" onclick="setQTab('reported')" style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;background:var(--card);color:var(--muted);border:1.5px solid var(--rim);position:relative">Zgłoszone <span id="qtab-reported-count" style="display:none;background:#dc2626;color:#fff;font-size:9px;padding:1px 5px;border-radius:99px;margin-left:3px"></span></button>
+  </div>
   <div style="display:flex;align-items:center;gap:8px">
     <div style="font-size:11px;color:var(--muted);flex:1" id="qb-count"></div>
     <button id="qb-copy-btn" onclick="copyMarkedForReview()" style="display:none;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;background:var(--card);color:var(--muted);border:1.5px solid var(--rim);white-space:nowrap">📋 Kopiuj</button>
     <button id="qb-marked-btn" onclick="toggleMarkedView()" style="display:none;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;background:#1e1b4b;color:#a5b4fc;border:1.5px solid #534AB7;white-space:nowrap">Zaznaczone (<span id="qb-marked-count">0</span>)</button>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;color:var(--muted);padding:0 2px">
+  <div id="qb-col-headers" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;color:var(--muted);padding:0 2px">
     <div>Dla innych graczy</div>
     <div>Dla gracza Temat</div>
   </div>
@@ -323,6 +327,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   <div class="vstatus" id="v-st"></div>
   <button class="btn btn-lit" id="btn-vote" style="display:none" onclick="confirmVote()">Zatwierdź odpowiedź ✓</button>
   <button class="btn btn-dim" style="font-size:12px;padding:10px;color:var(--c0);border-color:var(--c0)33;margin-top:4px" onclick="leaveGame()">← Opuść grę</button>
+  <button class="btn btn-dim" style="font-size:11px;padding:8px;color:var(--muted);border-color:var(--rim);margin-top:0" onclick="reportCurrentQuestion()">⚑ Zgłoś błąd w pytaniu</button>
 </div>
 
 <!-- ══ WAIT ══ -->
@@ -335,6 +340,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     <div class="wq" id="w-q"></div>
   </div>
   <button class="btn btn-dim" style="font-size:12px;padding:10px;color:var(--c0);border-color:var(--c0)33" onclick="leaveGame()">← Opuść grę</button>
+  <button class="btn btn-dim" style="font-size:11px;padding:8px;color:var(--muted);border-color:var(--rim);margin-top:0" onclick="reportCurrentQuestion()">⚑ Zgłoś błąd w pytaniu</button>
 </div>
 
 <!-- ══ SUBJECT ══ -->
@@ -348,6 +354,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   <div class="ans-list" id="sj-ans"></div>
   <button class="btn btn-dim" id="btn-swap-sj" style="display:none" onclick="swapQuestionSJ()"></button>
   <button class="btn btn-lit" id="btn-sj" style="display:none" onclick="submitSJ()">Zatwierdź i pozwól innym odpowiedzieć →</button>
+  <button class="btn btn-dim" style="font-size:11px;padding:8px;color:var(--muted);border-color:var(--rim)" onclick="reportCurrentQuestion()">⚑ Zgłoś błąd w pytaniu</button>
 </div>
 
 <!-- ══ REVEAL ══ -->
@@ -357,6 +364,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   <div class="ans-list" id="rv-ans"></div>
   <div class="rcard" id="rv-res"></div>
   <div id="rv-btn"></div>
+  <button class="btn btn-dim" style="font-size:11px;padding:8px;color:var(--muted);border-color:var(--rim)" onclick="reportCurrentQuestion()">⚑ Zgłoś błąd w pytaniu</button>
 </div>
 
 <!-- ══ END ══ -->
@@ -2124,15 +2132,52 @@ function updateHomeActions(){ /* actions always visible */ }
 // ── QUESTION BROWSER ──
 let _qMarked=new Set();
 let _qMarkedView=false;
-let _qColors={}; // idx → 'green'|'red'
+let _qColors={};
+let _qTab='all'; // 'all' | 'reported'
+let _qReported={}; // idx → true
 
-// Load saved colors
+// Load saved colors and reported
 (()=>{
-  try{
-    const saved=JSON.parse(localStorage.getItem('wiem_qcolors')||'{}');
-    _qColors=saved;
-  }catch(e){}
+  try{ _qColors=JSON.parse(localStorage.getItem('wiem_qcolors')||'{}'); }catch(e){}
+  try{ _qReported=JSON.parse(localStorage.getItem('wiem_qreported')||'{}'); }catch(e){}
 })();
+
+function reportCurrentQuestion(){
+  if(!GS)return;
+  const idx=GS.qSeq?.[GS.ri];
+  if(idx===undefined||idx===null)return;
+  _qReported[idx]=true;
+  try{ localStorage.setItem('wiem_qreported',JSON.stringify(_qReported)); }catch(e){}
+  // Flash feedback
+  const btn=event.target;
+  const orig=btn.textContent;
+  btn.textContent='✓ Zgłoszono!';
+  btn.style.color='var(--c2)';
+  setTimeout(()=>{btn.textContent=orig;btn.style.color='';},2000);
+  updateReportedTabCount();
+}
+
+function updateReportedTabCount(){
+  const n=Object.keys(_qReported).length;
+  const el=$('qtab-reported-count');
+  if(el){ el.textContent=n; el.style.display=n>0?'inline':'none'; }
+}
+
+function setQTab(tab){
+  _qTab=tab;
+  _qMarkedView=false;
+  ['all','reported'].forEach(k=>{
+    const b=$('qtab-'+k);
+    if(!b)return;
+    const active=k===tab;
+    b.style.background=active?'var(--text)':'var(--card)';
+    b.style.color=active?'var(--bg)':'var(--muted)';
+    b.style.border=active?'none':'1.5px solid var(--rim)';
+  });
+  const headers=$('qb-col-headers');
+  if(headers) headers.style.display=_qTab==='reported'?'none':'grid';
+  renderQBrowser();
+}
 
 function getCardBorder(idx){
   if(_qColors[idx]==='green') return '#16a34a';
@@ -2165,7 +2210,8 @@ let _qFilter='all'; // kept for compatibility but not used in UI
 
 function openQBrowser(){
   _qMarkedView=false;
-  renderQBrowser();
+  setQTab(_qTab);
+  updateReportedTabCount();
   show('s-qbrowser');
 }
 
@@ -2233,6 +2279,25 @@ function renderQBrowser(){
   if(!list)return;
   list.innerHTML='';
 
+  if(_qTab==='reported'){
+    const reportedIndices=Object.keys(_qReported).map(Number);
+    if(countEl) countEl.textContent=`${reportedIndices.length} zgłoszonych`;
+    if(reportedIndices.length===0){
+      list.innerHTML=`<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px 0">Brak zgłoszonych błędów</div>`;
+      return;
+    }
+    reportedIndices.forEach(realIdx=>{
+      const div=document.createElement('div');
+      div.id='qcard-'+realIdx;
+      div.style.cssText=`background:var(--card);border:1.5px solid #dc2626;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px`;
+      renderQCardReported(div, realIdx, false);
+      list.appendChild(div);
+      const colorRow=div.querySelector('[id^="qcolor-"]');
+      if(colorRow) updateColorBtns(colorRow, realIdx);
+    });
+    return;
+  }
+
   const indices=QS.map((_,i)=>i).filter(i=>_qMarkedView?_qMarked.has(i):true);
   if(countEl) countEl.textContent=_qMarkedView?`${indices.length} zaznaczonych`:`${indices.length} pytań`;
 
@@ -2242,12 +2307,80 @@ function renderQBrowser(){
     div.style.cssText=`background:var(--card);border:1.5px solid ${getCardBorder(realIdx)};border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px`;
     renderQCard(div, realIdx, _qMarkedView);
     list.appendChild(div);
-    // Init color buttons after appending to DOM
     const colorRow=div.querySelector('[id^="qcolor-"]');
     if(colorRow) updateColorBtns(colorRow, realIdx);
   });
 
   updateMarkedBtn();
+}
+
+function renderQCardReported(div, idx, editing){
+  const item=QS[idx];
+  const qOther=item.q.replace(/\[imię\]/g,'[Temat]');
+  const qSubj=item.q.includes('[imię]')?qForSubject(item.q):'—';
+  if(!editing){
+    div.innerHTML=`
+      <div style="display:flex;align-items:flex-start;gap:8px">
+        <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#f87171;font-weight:700;flex-shrink:0;margin-top:2px">⚑ ${idx+1}</div>
+        <div style="display:flex;flex-direction:column;gap:6px;flex:1">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <div style="font-size:9px;color:var(--muted);margin-bottom:3px;letter-spacing:1px;text-transform:uppercase">Dla innych</div>
+              <div style="font-size:11px;font-weight:700;line-height:1.4;text-transform:uppercase">${qOther}</div>
+            </div>
+            <div>
+              <div style="font-size:9px;color:var(--muted);margin-bottom:3px;letter-spacing:1px;text-transform:uppercase">Dla Tematu</div>
+              <div style="font-size:11px;font-weight:700;line-height:1.4;text-transform:uppercase;color:#a78bfa">${qSubj}</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px solid var(--rim);padding-top:6px">
+            ${[0,1,2].map(j=>`
+              <div style="font-size:11px;color:var(--muted)">${j+1}. ${item.a[j]}</div>
+              <div style="font-size:11px;color:#a78bfa66">${j+1}. ${item.q.includes('[imię]')?answerForSubject(item.a[j]):'—'}</div>`).join('')}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;align-items:center">
+          <div id="qcolor-${idx}" style="display:flex;align-items:center;gap:4px"></div>
+          <button onclick="startEditQReported(${idx})" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:0;line-height:1" title="Edytuj">✏️</button>
+          <button onclick="dismissReport(${idx})" style="background:none;border:none;color:var(--muted);font-size:10px;cursor:pointer;padding:0;line-height:1" title="Usuń zgłoszenie">🗑</button>
+        </div>
+      </div>`;
+  } else {
+    div.innerHTML=`
+      <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#f87171;font-weight:700">⚑ Edycja zgłoszonego pytania ${idx+1}</div>
+      <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Treść pytania <span style="color:var(--c3)">(użyj [imię] dla gracza Temat)</span></div>
+      <textarea id="eq-q-${idx}" style="width:100%;background:var(--bg);border:1.5px solid var(--rim);border-radius:8px;padding:8px;font-size:12px;color:var(--text);font-family:inherit;resize:vertical;min-height:56px">${item.q}</textarea>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Odpowiedzi</div>
+        <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#a78bfa66">Podgląd dla Tematu</div>
+      </div>
+      ${[0,1,2].map(j=>`
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:center">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:18px;height:18px;border-radius:4px;background:var(--rim);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">${j+1}</div>
+            <input id="eq-a-${idx}-${j}" type="text" value="${item.a[j].replace(/"/g,'&quot;')}"
+              oninput="updateSubjPreview(${idx})"
+              style="flex:1;min-width:0;background:var(--bg);border:1.5px solid var(--rim);border-radius:8px;padding:6px 8px;font-size:11px;color:var(--text);font-family:inherit">
+          </div>
+          <div id="eq-prev-${idx}-${j}" style="font-size:11px;color:#a78bfa66;padding:0 4px;line-height:1.4">${item.q.includes('[imię]')?answerForSubject(item.a[j]):'—'}</div>
+        </div>`).join('')}
+      <div style="display:flex;gap:8px;margin-top:2px">
+        <button onclick="saveEditQ(${idx});renderQCardReported($('qcard-${idx}'),${idx},false)" style="flex:1;background:var(--text);color:var(--bg);border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">Zapisz</button>
+        <button onclick="renderQCardReported($('qcard-${idx}'),${idx},false)" style="flex:1;background:var(--card);color:var(--muted);border:1.5px solid var(--rim);border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">Anuluj</button>
+      </div>`;
+  }
+}
+
+function startEditQReported(idx){
+  const div=$('qcard-'+idx);
+  if(div) renderQCardReported(div, idx, true);
+}
+
+function dismissReport(idx){
+  delete _qReported[idx];
+  try{ localStorage.setItem('wiem_qreported',JSON.stringify(_qReported)); }catch(e){}
+  updateReportedTabCount();
+  renderQBrowser();
 }
 
 function renderQCard(div, idx, editing){
