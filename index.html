@@ -838,9 +838,13 @@ function norm(gs){
   gs.qAnswers   = gs.qAnswers || {};
   gs.usedQs     = gs.usedQs ? (Array.isArray(gs.usedQs)?gs.usedQs:Object.values(gs.usedQs)) : [];
   // Normalize vote keys AND values to integers
+  // Skip null/undefined values — parseInt(null)=NaN would falsely pass allVoted checks
   if(gs.votes && typeof gs.votes==='object'){
     const v={};
-    Object.keys(gs.votes).forEach(k=>{ v[parseInt(k)]=parseInt(gs.votes[k]); });
+    Object.keys(gs.votes).forEach(k=>{
+      const val=gs.votes[k];
+      if(val!==null && val!==undefined){ v[parseInt(k)]=parseInt(val); }
+    });
     gs.votes=v;
   }
   if(gs.sa!==undefined && gs.sa!==null && gs.sa!==-1) gs.sa=parseInt(gs.sa);
@@ -1034,12 +1038,41 @@ async function handleGSUpdate(){
       } else { _allVotedAt=null; }
     }
 
-    // subject→voting and voting→reveal are now handled client-side
-    // in submitSJ() and castVote() — handleGSUpdate just renders
+    // subject→voting: handled client-side in submitSJ()
+    // voting→reveal: castVote() handles it optimistically, but if local GS was stale
+    // (race condition with concurrent votes), host catches it here as a guaranteed fallback
     if(GS.phase==='voting'){
       const guessers=GS.players.filter((p,i)=>p&&i!==si);
       const done=guessers.filter((p,gi)=>{const pi=GS.players.indexOf(p);return GS.votes[pi]!==undefined;}).length;
       if($('sync-st'))$('sync-st').textContent=`Odpowiedzi: ${done}/${guessers.length}`;
+      // Fallback: if all guessers have voted but reveal wasn't triggered yet, host does it
+      if(done>=guessers.length && guessers.length>0){
+        // GS here is already a fresh re-fetch from SSE handler — use it directly
+        const next=norm(dc(GS));
+        next.phase='reveal';
+        let poolDelta=0;
+        next.players.forEach((p,i)=>{
+          if(!p||i===si)return;
+          const bet=parseInt(next.bets?.[i])||1;
+          if(next.votes[i]==next.sa){
+            next.players[i].pts+=bet; next.players[si].pts++;
+            poolDelta-=bet; poolDelta--;
+          } else {
+            const actual=Math.min(bet,next.players[i].pts);
+            next.players[i].pts=Math.max(0,next.players[i].pts-actual);
+            poolDelta+=actual;
+          }
+        });
+        next.pool=Math.max(0,(next.pool||0)+poolDelta);
+        const mode=next.gameMode||'rounds';
+        const anyBroke=next.players.some(p=>p&&p.pts<=0);
+        if(mode==='pool'&&(next.pool<=0||anyBroke)) next.phase='ended';
+        else if(mode==='rounds'&&next.ri+1>=next.rt) next.phase='ended';
+        GS=next;
+        await writeGS();
+        render();
+        return; // skip the render() below — already called above
+      }
     }
   }
 
@@ -1829,7 +1862,7 @@ function renderReveal(){
       <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:2px;color:${hit?'#4ade80':'#f87171'};line-height:1">${hit?gW(myName,'TRAFIŁEŚ!','TRAFIŁAŚ!'):'PUDŁO!'}</div>
       <div style="font-size:13px;color:${hit?'#86efac':'#fca5a5'};margin-top:8px;line-height:1.5">${hit
         ?`Twoja odpowiedź = odpowiedź ${sp.name} 🎯 &nbsp;<strong>+${myBet} ${myBet===1?'żeton':'żetony'} z puli!</strong>`
-        :`${gW(myName,'Wybrałeś','Wybrałaś')}: <strong style="color:#fff">${q.a[myVote]}</strong> &nbsp;·&nbsp; Poprawna: <strong style="color:#4ade80">${q.a[correct]}</strong><br><strong style="color:#f87171">-${myBet} ${myBet===1?'żeton':'żetony'} do puli</strong>`
+        :`${gW(myName,'Wybrałeś','Wybrałaś')}: <strong style="color:#fff">${getQAnswers(GS.ri)[myVote]}</strong> &nbsp;·&nbsp; Poprawna: <strong style="color:#4ade80">${getQAnswers(GS.ri)[correct]}</strong><br><strong style="color:#f87171">-${myBet} ${myBet===1?'żeton':'żetony'} do puli</strong>`
       }</div>
     </div>`;
   } else if(iAmSubject){
