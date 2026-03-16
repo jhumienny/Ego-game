@@ -1012,6 +1012,7 @@ function answerForSubject(a){
   return a;
 }
 const C=i=>COLORS[i%4];
+const POLL_MS=2500;
 const $=id=>document.getElementById(id);
 const show=id=>{document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');};
 const shuf=a=>{const b=[...a];for(let i=b.length-1;i>0;i--){const j=~~(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
