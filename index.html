@@ -924,18 +924,44 @@ let _sseSource=null;
 function startPoll(){
   stopPoll();
   if(!gameId)return;
-  pollTimer=setInterval(async()=>{
-    if(!gameId)return;
-    try{
-      const gs=await fbGet(`games/${gameId}`);
-      if(!gs){stopPoll();return;}
-      GS=norm(gs);
-      await handleGSUpdate();
-    }catch(e){
-      console.error('poll error:',e.message);
-      if($('sync-st'))$('sync-st').textContent='⚠ Błąd połączenia';
-    }
-  },POLL_MS);
+  // Try SSE first (requires HTTPS)
+  try{
+    _sseSource=new EventSource(`${DB_URL}/games/${gameId}.json?stream=true`);
+    _sseSource.addEventListener('put',async(ev)=>{
+      try{
+        const msg=JSON.parse(ev.data);
+        if(!msg||msg.data===null){stopPoll();return;}
+        if(msg.path==='/'||!msg.path){GS=norm(msg.data);}
+        else{const gs=await fbGet(`games/${gameId}`);if(!gs){stopPoll();return;}GS=norm(gs);}
+        await handleGSUpdate();
+      }catch(e){console.error('SSE put error',e.message);}
+    });
+    _sseSource.addEventListener('patch',async()=>{
+      try{
+        const gs=await fbGet(`games/${gameId}`);
+        if(!gs){stopPoll();return;}
+        GS=norm(gs);await handleGSUpdate();
+      }catch(e){console.error('SSE patch error',e.message);}
+    });
+    _sseSource.onerror=()=>{
+      console.warn('SSE failed, falling back to polling');
+      if(_sseSource){_sseSource.close();_sseSource=null;}
+      if(!pollTimer){
+        pollTimer=setInterval(async()=>{
+          if(!gameId)return;
+          try{const gs=await fbGet(`games/${gameId}`);if(!gs){stopPoll();return;}GS=norm(gs);await handleGSUpdate();}
+          catch(e){console.error('fallback poll',e.message);}
+        },POLL_MS);
+      }
+    };
+  }catch(e){
+    // SSE not available — use polling
+    pollTimer=setInterval(async()=>{
+      if(!gameId)return;
+      try{const gs=await fbGet(`games/${gameId}`);if(!gs){stopPoll();return;}GS=norm(gs);await handleGSUpdate();}
+      catch(e){console.error('poll error',e.message);}
+    },POLL_MS);
+  }
 }
 
 function stopPoll(){
