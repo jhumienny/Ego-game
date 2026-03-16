@@ -267,7 +267,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   </div>
   <div class="ans-list" id="sj-ans"></div>
   <button class="btn btn-dim" id="btn-swap-sj" style="display:none" onclick="swapQuestionSJ()"></button>
-  <button class="btn btn-lit" id="btn-sj" style="display:none" onclick="submitSJ()">Pokaż wyniki! 🎉</button>
+  <button class="btn btn-lit" id="btn-sj" style="display:none" onclick="submitSJ()">Zatwierdź i pozwól innym odpowiedzieć →</button>
 </div>
 
 <!-- ══ REVEAL ══ -->
@@ -1124,6 +1124,7 @@ function renderSubj(){
 
   // Confirm button — only after picking
   $('btn-sj').style.display=_sjPending!==null?'block':'none';
+  $('btn-sj').textContent='Zatwierdź i pozwól innym odpowiedzieć →';
 
   show('s-subj');
 }
@@ -1193,15 +1194,29 @@ function renderReveal(){
     btn.className='abtn locked'+(isCorrect?' correct':'');
     if(isMyVote&&!isCorrect) btn.style.cssText='border-color:#dc2626;background:#450a0a;pointer-events:none;cursor:default;';
     const myTag=isMyVote
-      ?`<span style="margin-left:auto;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:${isCorrect?'#16a34a':'#dc2626'};color:#fff;flex-shrink:0">${isCorrect?'TY ✓':'TY ✗'}</span>`:'';
-    btn.innerHTML=`<div class="anum">${i+1}</div><span style="flex:1">${a}</span>${myTag}`;
+      ?`<span style="margin-left:auto;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:${isCorrect?'#16a34a':'#dc2626'};color:#fff;white-space:nowrap">${isCorrect?'TY ✓':'TY ✗'}</span>`:'';
+    btn.innerHTML=`<div class="anum">${i+1}</div><span style="flex:1;min-width:0">${a}</span>${myTag}`;
     const voters=GS.players.filter((p,pi)=>p&&pi!==si&&GS.votes[pi]==i);
-    if(voters.length){
-      const ch=document.createElement('div');ch.className='voter-chips';
+    if(voters.length || isMyVote){
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;align-items:center;grid-column:2';
+      if(isMyVote){
+        row.innerHTML=`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:${isCorrect?'#16a34a':'#dc2626'};color:#fff;white-space:nowrap">${isCorrect?'TY ✓':'TY ✗'}</span>`;
+      }
       voters.forEach(v=>{const pi=GS.players.indexOf(v),hit=i==correct;
-        ch.innerHTML+=`<span class="vchip" style="background:${C(pi)}22;color:${C(pi)};border:1px solid ${C(pi)}44">${hit?'✓':'✗'} ${v.name}</span>`;
+        row.innerHTML+=`<span class="vchip" style="background:${C(pi)}22;color:${C(pi)};border:1px solid ${C(pi)}44">${hit?'✓':'✗'} ${v.name}</span>`;
       });
-      btn.appendChild(ch);
+      // Wrap button content in a column layout
+      btn.style.flexDirection='column';
+      btn.style.alignItems='flex-start';
+      const top=document.createElement('div');
+      top.style.cssText='display:flex;align-items:center;gap:12px;width:100%';
+      const numEl=btn.querySelector('.anum');
+      const textEl=btn.querySelector('span:not(.anum)');
+      if(numEl&&textEl){top.appendChild(numEl);top.appendChild(textEl);}
+      btn.innerHTML='';
+      btn.appendChild(top);
+      btn.appendChild(row);
     }
     ac.appendChild(btn);
   });
