@@ -1674,19 +1674,31 @@ function mkSbar(id){
   const el=$(id);if(!el||!GS)return;
   const max=GS.maxPlayers||4;
   const poolHtml=`<div class="sbi" style="border-left:1px solid var(--rim);padding-left:6px"><div class="sbi-n" style="color:var(--muted)">pula</div><div class="sbi-v" style="color:var(--c3)">${GS.pool??0} 🪙</div></div>`;
-  const codeHtml=gameId?`<div onclick="copySbarCode()" title="Skopiuj kod" style="margin-left:auto;padding:2px 8px;border-radius:6px;font-size:10px;letter-spacing:2px;color:var(--muted);cursor:pointer;white-space:nowrap;font-family:'Bebas Neue',sans-serif" id="sbar-code-${id}">${gameId}</div>`:'';
   el.innerHTML=GS.players.slice(0,max).map((p,i)=>p
     ?`<div class="sbi"><div class="sbi-n" style="color:${C(i)}">${p.name}</div><div class="sbi-v" style="color:${C(i)}">${p.pts} 🪙</div></div>`
     :''
-  ).join('')+poolHtml+codeHtml;
+  ).join('')+poolHtml;
+
+  // Code row below sbar
+  const codeRowId='code-row-'+id;
+  let cr=$(codeRowId);
+  if(!cr){
+    cr=document.createElement('div');
+    cr.id=codeRowId;
+    cr.onclick=copySbarCode;
+    cr.title='Kliknij aby skopiować kod';
+    cr.style.cssText='text-align:center;cursor:pointer;font-size:11px;color:var(--muted);letter-spacing:3px;font-family:\'Bebas Neue\',sans-serif;padding:2px 0;margin-top:-6px';
+    el.parentNode.insertBefore(cr,el.nextSibling);
+  }
+  cr.textContent=gameId||'';
 }
 
 function copySbarCode(){
   if(!gameId)return;
   navigator.clipboard?.writeText(gameId).catch(()=>{});
-  document.querySelectorAll('[id^="sbar-code-"]').forEach(el=>{
+  document.querySelectorAll('[id^="code-row-"]').forEach(el=>{
     const orig=el.textContent;
-    el.textContent='✓';
+    el.textContent='✓  SKOPIOWANO';
     el.style.color='var(--c2)';
     setTimeout(()=>{el.textContent=orig;el.style.color='';},1500);
   });
