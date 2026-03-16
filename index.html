@@ -1149,8 +1149,9 @@ function startPoll(){
       if(!gs){clearInterval(pollTimer);return;}
       GS=norm(gs);
 
-      // Always re-render lobby directly when on lobby screen
-      if(GS.phase==='lobby' && $('s-lobby').classList.contains('on')){
+      // Always re-render lobby immediately when in lobby phase
+      if(GS.phase==='lobby'){
+        console.log('[LOBBY POLL] players:', JSON.stringify(GS.players.slice(0,4).map(p=>p?p.name:'null')));
         renderLobby();
       }
 
