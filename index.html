@@ -1991,10 +1991,13 @@ async function nextRound(){
 // ── END ──
 function renderEnd(){
   const ps=[...GS.players.entries()].filter(([,p])=>p).map(([i,p])=>({...p,i})).sort((a,b)=>b.pts-a.pts);
-  const med=['🥇','🥈','🥉',''],h=[120,90,70,55];
-  $('end-pod').innerHTML=ps.map((p,rank)=>
-    `<div class="podcol"><div class="podbar" style="height:${h[rank]||40}px;background:${C(p.i)};color:#fff;">${med[rank]||''}</div><div style="font-size:12px;font-weight:600;color:${C(p.i)}">${p.name}</div><div style="font-size:11px;color:var(--muted)">${p.pts} 🪙</div></div>`
-  ).join('');
+  const med=['🥇','🥈','🥉',''];
+  const maxPts=Math.max(...ps.map(p=>p.pts),1);
+  const minH=40,maxH=120;
+  $('end-pod').innerHTML=ps.map((p,rank)=>{
+    const h=Math.round(minH+(maxH-minH)*(p.pts/maxPts));
+    return`<div class="podcol"><div class="podbar" style="height:${h}px;background:${C(p.i)};color:#fff;">${med[rank]||''}</div><div style="font-size:12px;font-weight:600;color:${C(p.i)}">${p.name}</div><div style="font-size:11px;color:var(--muted)">${p.pts} 🪙</div></div>`;
+  }).join('');
   $('end-sc').innerHTML='<div class="rctitle">Wyniki końcowe</div>'+
     ps.map(p=>`<div class="rvrow"><div class="rvl"><div class="rvdot" style="background:${C(p.i)}"></div><span>${p.name}</span></div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:${C(p.i)}">${p.pts} 🪙</div></div>`).join('');
   const eb=$('end-btns');eb.innerHTML='';
