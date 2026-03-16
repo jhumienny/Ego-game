@@ -929,6 +929,7 @@ function qForSubject(q){
 }
 
 // ── utils ──
+const POLL_MS=2500;
 const C=i=>COLORS[i%4];
 const $=id=>document.getElementById(id);
 const show=id=>{document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');};
