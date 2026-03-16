@@ -159,33 +159,45 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <button id="nq-type-btn" onclick="toggleNewQType()" style="padding:4px 10px;border-radius:99px;font-size:10px;font-weight:700;cursor:pointer;border:1.5px solid var(--rim);background:transparent;color:var(--muted);" title="Typ odpowiedzi">📝 Własne</button>
     </div>
     <textarea id="nq-q" placeholder="Jak [imię] spędza wolny weekend?" style="width:100%;background:var(--bg);border:1.5px solid var(--rim);border-radius:8px;padding:8px;font-size:12px;color:var(--text);font-family:inherit;resize:vertical;min-height:52px"
-      oninput="updateNewQPreview()" onkeydown="event.stopPropagation()"></textarea>
+      onkeydown="event.stopPropagation()"></textarea>
+    <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#a78bfa">Pytanie dla Tematu (2. osoba)</div>
+    <textarea id="nq-qs" placeholder="Jak spędzasz wolny weekend?" style="width:100%;background:#3730a322;border:1.5px solid #a78bfa55;border-radius:8px;padding:8px;font-size:12px;color:#a78bfa;font-family:inherit;resize:vertical;min-height:48px"
+      onkeydown="event.stopPropagation()"></textarea>
     <div id="nq-answers-section">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
-        <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Odpowiedzi</div>
-        <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#a78bfa66">Podgląd dla Tematu</div>
+        <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Odpowiedzi (dla innych)</div>
+        <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#a78bfa">Odpowiedzi (dla Tematu)</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:center">
           <div style="display:flex;align-items:center;gap:6px">
             <div style="width:18px;height:18px;border-radius:4px;background:var(--rim);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">1</div>
-            <input id="nq-a1" type="text" data-1p-ignore data-lpignore="true" data-form-type="other" autocomplete="off" placeholder="Odpowiedź 1…" style="flex:1;min-width:0;background:var(--bg);border:1.5px solid var(--rim);border-radius:8px;padding:6px 8px;font-size:11px;color:var(--text);font-family:inherit" oninput="updateNewQPreview()" onkeydown="event.stopPropagation()">
+            <input id="nq-a1" type="text" data-1p-ignore data-lpignore="true" data-form-type="other" autocomplete="off" placeholder="Odpowiedź 1…" style="flex:1;min-width:0;background:var(--bg);border:1.5px solid var(--rim);border-radius:8px;padding:6px 8px;font-size:11px;color:var(--text);font-family:inherit" onkeydown="event.stopPropagation()">
           </div>
-          <div id="nq-prev1" style="font-size:11px;color:#a78bfa99;padding:0 4px;line-height:1.4">—</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:18px;height:18px;border-radius:4px;background:#3730a344;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;color:#a78bfa">1</div>
+            <input id="nq-as1" type="text" data-1p-ignore data-lpignore="true" data-form-type="other" autocomplete="off" placeholder="Odpowiedź 1 (Temat)…" style="flex:1;min-width:0;background:#3730a322;border:1.5px solid #a78bfa55;border-radius:8px;padding:6px 8px;font-size:11px;color:#a78bfa;font-family:inherit" onkeydown="event.stopPropagation()">
+          </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:center">
           <div style="display:flex;align-items:center;gap:6px">
             <div style="width:18px;height:18px;border-radius:4px;background:var(--rim);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">2</div>
-            <input id="nq-a2" type="text" data-1p-ignore data-lpignore="true" data-form-type="other" autocomplete="off" placeholder="Odpowiedź 2…" style="flex:1;min-width:0;background:var(--bg);border:1.5px solid var(--rim);border-radius:8px;padding:6px 8px;font-size:11px;color:var(--text);font-family:inherit" oninput="updateNewQPreview()" onkeydown="event.stopPropagation()">
+            <input id="nq-a2" type="text" data-1p-ignore data-lpignore="true" data-form-type="other" autocomplete="off" placeholder="Odpowiedź 2…" style="flex:1;min-width:0;background:var(--bg);border:1.5px solid var(--rim);border-radius:8px;padding:6px 8px;font-size:11px;color:var(--text);font-family:inherit" onkeydown="event.stopPropagation()">
           </div>
-          <div id="nq-prev2" style="font-size:11px;color:#a78bfa99;padding:0 4px;line-height:1.4">—</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:18px;height:18px;border-radius:4px;background:#3730a344;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;color:#a78bfa">2</div>
+            <input id="nq-as2" type="text" data-1p-ignore data-lpignore="true" data-form-type="other" autocomplete="off" placeholder="Odpowiedź 2 (Temat)…" style="flex:1;min-width:0;background:#3730a322;border:1.5px solid #a78bfa55;border-radius:8px;padding:6px 8px;font-size:11px;color:#a78bfa;font-family:inherit" onkeydown="event.stopPropagation()">
+          </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:center">
           <div style="display:flex;align-items:center;gap:6px">
             <div style="width:18px;height:18px;border-radius:4px;background:var(--rim);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">3</div>
-            <input id="nq-a3" type="text" data-1p-ignore data-lpignore="true" data-form-type="other" autocomplete="off" placeholder="Odpowiedź 3…" style="flex:1;min-width:0;background:var(--bg);border:1.5px solid var(--rim);border-radius:8px;padding:6px 8px;font-size:11px;color:var(--text);font-family:inherit" oninput="updateNewQPreview()" onkeydown="event.stopPropagation()">
+            <input id="nq-a3" type="text" data-1p-ignore data-lpignore="true" data-form-type="other" autocomplete="off" placeholder="Odpowiedź 3…" style="flex:1;min-width:0;background:var(--bg);border:1.5px solid var(--rim);border-radius:8px;padding:6px 8px;font-size:11px;color:var(--text);font-family:inherit" onkeydown="event.stopPropagation()">
           </div>
-          <div id="nq-prev3" style="font-size:11px;color:#a78bfa99;padding:0 4px;line-height:1.4">—</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:18px;height:18px;border-radius:4px;background:#3730a344;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;color:#a78bfa">3</div>
+            <input id="nq-as3" type="text" data-1p-ignore data-lpignore="true" data-form-type="other" autocomplete="off" placeholder="Odpowiedź 3 (Temat)…" style="flex:1;min-width:0;background:#3730a322;border:1.5px solid #a78bfa55;border-radius:8px;padding:6px 8px;font-size:11px;color:#a78bfa;font-family:inherit" onkeydown="event.stopPropagation()">
+          </div>
         </div>
       </div>
     </div>
@@ -490,51 +502,51 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
    Format: { q: "Pytanie o [imię]?", a: ["Opcja 1","Opcja 2","Opcja 3"] }
 ═══════════════════════════════════════════════════════════════ */
 const QS=[
-  {q:"Co [imię] robi gdy jest mu/jej nudno na imprezie?",                          a:["Scrolluje telefon w kącie","Udaje że dobrze się bawi","Szczerze mówi że jedzie do domu"]},
-  {q:"Jak [imię] reaguje gdy ktoś zrobi mu/jej niespodziankę?",                    a:["Płacze ze wzruszenia","Śmieje się nerwowo","Udaje zachwyt a w środku stres"]},
-  {q:"Co [imię] robi gdy ktoś zje jego/jej jedzenie w lodówce?",                   a:["Mówi spokojnie że to było jego/jej","Milczy ale pamięta","Wybucha od razu"]},
-  {q:"Ile czasu [imię] spędza w łazience rano?",                                   a:["Minimum – 5 minut i wypad","Pół godziny to norma","Godzina – rytuał jest rytuałem"]},
-  {q:"Jak [imię] zachowuje się gdy wygra w grę planszową?",                        a:["Świętuje głośno i długo","Skromnie uśmiecha się","Od razu chce zagrać jeszcze raz"]},
-  {q:"Czego [imię] nigdy nie powiedziałby/łaby rodzicom?",                         a:["Ile naprawdę wydaje na głupoty","Co naprawdę myśli o ich znajomych","Co robił/a ostatni weekend"]},
-  {q:"Jak [imię] zachowuje się w pierwszej godzinie po przebudzeniu?",             a:["Nie odzywaj się do mnie – to strefa ciszy","Normalnie – od razu gotowy/a do działania","Potrzebuje kawy zanim stanie się człowiekiem"]},
-  {q:"Co [imię] robi gdy film w kinie jest zły?",                                   a:["Siedzi cierpliwie – kupił/a bilet","Komentuje pod nosem","Wychodzi bez wyrzutów sumienia"]},
-  {q:"Jak [imię] reaguje gdy ktoś go/ją ignoruje na grupowym czacie?",             a:["Pisze jeszcze raz – może nie zobaczyli","Milczy z urazą","Olewa – nie będzie się narzucać"]},
-  {q:"Co [imię] kupuje impulsywnie o czym potem żałuje?",                          a:["Jedzenie o późnej porze","Ubrania których nie nosi","Gadżety których nie potrzebuje"]},
-  {q:"Jak [imię] zachowuje się gdy jest na diecie?",                               a:["Trzyma się ściśle przez tydzień potem odpuszcza","Mówi że jest na diecie ale je wszystko","Naprawdę się trzyma i jest z siebie dumny/a"]},
-  {q:"Co [imię] robi gdy słyszy nieprawdziwą plotkę o sobie?",                     a:["Prostuje od razu i głośno","Udaje że nie słyszał/a","Śmieje się bo jest lepsza od prawdy"]},
-  {q:"Jak [imię] zachowuje się na pikniku gdy zaczyna padać?",                     a:["Natychmiast pakuje manatki","Zostaje – trochę deszczu nie zaszkodzi","Już wcześniej wiedział/a że tak będzie i mówi to wszystkim"]},
-  {q:"Co [imię] robi gdy dostanie dziwny prezent którego nie chce?",               a:["Dziękuje szczerze i wyrzuca po tygodniu","Pyta wprost skąd taki pomysł","Trzyma na widoku gdy tamta osoba przychodzi"]},
-  {q:"Jak [imię] spędza ostatnią godzinę przed snem?",                             a:["Scrolluje telefon mimo że wie że nie powinien/powinna","Czyta lub ogląda coś spokojnego","Leży i myśli o wszystkich niezręcznych sytuacjach z przeszłości"]},
-  {q:"Co [imię] robi gdy automat z kawą nie wydaje reszty?",                       a:["Potrząsa automatem ze złością","Wzrusza ramionami i idzie dalej","Szuka obsługi technicznej przez pół godziny"]},
-  {q:"Jak [imię] zachowuje się gdy ktoś spoileruje mu/jej serial?",                a:["Wybucha i nie może się uspokoić","Udaje że mu/jej to nie przeszkadza","Spokojnie mówi że woli nie wiedzieć"]},
-  {q:"Co [imię] robi gdy musi zadzwonić na infolinię?",                            a:["Odkłada to tygodniami","Dzwoni od razu – chce mieć z głowy","Prosi kogoś bliskiego żeby zadzwonił/a za niego/nią"]},
-  {q:"Jak [imię] tłumaczy się gdy spóźni się na spotkanie?",                      a:["Szczerze mówi że po prostu za późno wyszedł/wyszła","Zawsze ma gotową historyjkę","Pisze że jest już blisko gdy dopiero wychodzi"]},
-  {q:"Co [imię] robi gdy ktoś pyta go/ją o zdanie a mu/jej naprawdę wszystko jedno?", a:["Mówi wprost że nie ma preferencji","Wymyśla jakąś odpowiedź żeby skończyć temat","Pyta co tamta osoba woli i popiera jej wybór"]},
-  {q:"Jak [imię] zachowuje się gdy ktoś przy nim/niej fałszuje piosenkę?",         a:["Subtelnie przestaje śpiewać sam/a","Śpiewa głośniej żeby zagłuszyć","Mówi wprost że to trochę nie ta tonacja"]},
-  {q:"Co [imię] robi ostatniego dnia urlopu?",                                      a:["Już myśli o pracy i się nakręca","Żyje chwilą do ostatniej sekundy","Pakuje się z wyprzedzeniem i relaksuje"]},
-  {q:"Jak [imię] reaguje gdy ktoś mówi że jego/jej ulubiony zespół jest kiepski?", a:["Broni zajadle z faktami","Wzrusza ramionami – każdy ma swój gust","Urywa kontakt z tą osobą na jakiś czas"]},
-  {q:"Co [imię] robi gdy nie może zasnąć z powodu głośnych sąsiadów?",            a:["Zakłada słuchawki i próbuje dalej","Puka do ściany albo dzwoni do drzwi","Leży wściekły/a ale nic nie robi"]},
-  {q:"Jak [imię] zachowuje się gdy ma coś zrobić pierwszy raz?",                   a:["Researachuje temat przez tydzień zanim zacznie","Rzuca się na głęboką wodę bez przygotowania","Pyta kogoś kto już to robił"]},
-  {q:"Kto z graczy jako pierwszy rzuciłby wszystko i wyjechał w Bieszczady?",              a:[],type:"players"},
-  {q:"Kto z graczy najdłużej potrafi milczeć gdy jest na kogoś zły?",                     a:[],type:"players"},
-  {q:"Kto z graczy byłby najlepszym politykiem?",                                          a:[],type:"players"},
-  {q:"Kto z graczy najszybciej przepije wszystkie żetony na prawdziwej imprezie?",        a:[],type:"players"},
-  {q:"Kto z graczy miałby największy chaos w telefonie?",                                  a:[],type:"players"},
-  {q:"Kto z graczy jako ostatni przyznałby się do błędu?",                                a:[],type:"players"},
-  {q:"Kto z graczy przeżyłby najdłużej na bezludnej wyspie?",                            a:[],type:"players"},
-  {q:"Kto z graczy jest najbardziej prawdopodobnym autorem anonimowego donosu?",          a:[],type:"players"},
-  {q:"Kto z graczy płakałby na ślubie obcej osoby?",                                      a:[],type:"players"},
-  {q:"Kto z graczy jako pierwszy zasnąłby na nudnym wykładzie?",                          a:[],type:"players"},
-  {q:"Kto z graczy najchętniej kłamie że już jedzie gdy jeszcze nawet nie wstał z kanapy?", a:[],type:"players"},
-  {q:"Kto z graczy byłby najgroźniejszy jako szef?",                                      a:[],type:"players"},
-  {q:"Kto z graczy ma największy talent do wchodzenia w kłopoty bez złych intencji?",    a:[],type:"players"},
-  {q:"Kto z graczy jako pierwszy zdradza tajemnicę gdy jest pod wpływem?",               a:[],type:"players"},
-  {q:"Kto z graczy najlepiej poradziłby sobie w apokalipsie zombie?",                     a:[],type:"players"},
-  {q:"Kto z graczy skończyłby w więzieniu?",                                               a:[],type:"players"},
-  {q:"Kto z graczy jest najbardziej prawdopodobnym przyszłym miliarderem?",               a:[],type:"players"},
-  {q:"Kto z graczy nagrałby TikToka z tańcem i wrzucił bez mrugnięcia okiem?",           a:[],type:"players"},
-  {q:"Kto z graczy najpewniej płakałby przy reklamie z psem?",                            a:[],type:"players"},
-  {q:"Kto z graczy byłby pierwszą ofiarą w horrorze?",                                    a:[],type:"players"},
+  {q:"Co [imię] robi gdy jest mu/jej nudno na imprezie?",                          qs:"Co robisz gdy jest ci nudno na imprezie?",                                           a:["Scrolluje telefon w kącie","Udaje że dobrze się bawi","Szczerze mówi że jedzie do domu"],                                                                                     as:["Scrolluję telefon w kącie","Udaje że dobrze się bawię","Szczerze mówię że jadę do domu"]},
+  {q:"Jak [imię] reaguje gdy ktoś zrobi mu/jej niespodziankę?",                    qs:"Jak reagujesz gdy ktoś zrobi ci niespodziankę?",                                     a:["Płacze ze wzruszenia","Śmieje się nerwowo","Udaje zachwyt, a w środku stres"],                                                                                            as:["Płaczę ze wzruszenia","Śmieję się nerwowo","Udaję zachwyt, a w środku stres"]},
+  {q:"Co [imię] robi gdy ktoś zje jego/jej jedzenie w lodówce?",                   qs:"Co robisz gdy ktoś zje twoje jedzenie w lodówce?",                                   a:["Mówi spokojnie że to było jego/jej","Milczy, ale pamięta","Wybucha od razu"],                                                                                             as:["Mówię spokojnie że to było moje","Milczę, ale pamiętam","Wybucham od razu"]},
+  {q:"Ile czasu [imię] spędza w łazience rano?",                                   qs:"Ile czasu spędzasz w łazience rano?",                                                 a:["Minimum – 5 minut i wypad","Pół godziny to norma","Godzina – rytuał jest rytuałem"],                                                                                      as:["Minimum – 5 minut i wypad","Pół godziny to norma","Godzina – rytuał jest rytuałem"]},
+  {q:"Jak [imię] zachowuje się gdy wygra w grę planszową?",                        qs:"Jak zachowujesz się gdy wygrasz w grę planszową?",                                   a:["Świętuje głośno i długo","Skromnie uśmiecha się","Od razu chce zagrać jeszcze raz"],                                                                                      as:["Świętuję głośno i długo","Skromnie uśmiecham się","Od razu chcę zagrać jeszcze raz"]},
+  {q:"Czego [imię] nigdy nie powiedziałby/aby rodzicom?",                          qs:"Czego nigdy nie powiedziałbyś/abyś rodzicom?",                                       a:["Ile naprawdę wydaje na głupoty","Co naprawdę myśli o ich znajomych","Co robił/a ostatni weekend"],                                                                         as:["Ile naprawdę wydaję na głupoty","Co naprawdę myślę o ich znajomych","Co robiłem/am ostatni weekend"]},
+  {q:"Jak [imię] zachowuje się w pierwszej godzinie po przebudzeniu?",             qs:"Jak zachowujesz się w pierwszej godzinie po przebudzeniu?",                          a:["Nie odzywaj się do mnie – to strefa ciszy","Normalnie – od razu gotowy/a do działania","Potrzebuje kawy zanim stanie się człowiekiem"],                                    as:["Nie odzywaj się do mnie – to strefa ciszy","Normalnie – od razu gotowy/a do działania","Potrzebuję kawy zanim stanę się człowiekiem"]},
+  {q:"Co [imię] robi gdy film w kinie jest zły?",                                   qs:"Co robisz gdy film w kinie jest zły?",                                               a:["Siedzi cierpliwie – kupił/a bilet","Komentuje pod nosem","Wychodzi bez wyrzutów sumienia"],                                                                               as:["Siedzę cierpliwie – kupiłem/am bilet","Komentuję pod nosem","Wychodzę bez wyrzutów sumienia"]},
+  {q:"Jak [imię] reaguje gdy ktoś go/ją ignoruje na grupowym czacie?",             qs:"Jak reagujesz gdy ktoś cię ignoruje na grupowym czacie?",                            a:["Pisze jeszcze raz – może nie zobaczyli","Milczy z urazą","Olewa – nie będzie się narzucać"],                                                                               as:["Piszę jeszcze raz – może nie zobaczyli","Milczę z urazą","Olewam – nie będę się narzucać"]},
+  {q:"Co [imię] kupuje impulsywnie czego potem żałuje?",                           qs:"Co kupujesz impulsywnie czego potem żałujesz?",                                      a:["Jedzenie o późnej porze","Ubrania których nie nosi","Gadżety których nie potrzebuje"],                                                                                    as:["Jedzenie o późnej porze","Ubrania których nie noszę","Gadżety których nie potrzebuję"]},
+  {q:"Jak [imię] zachowuje się gdy jest na diecie?",                               qs:"Jak zachowujesz się gdy jesteś na diecie?",                                          a:["Trzyma się ściśle przez tydzień potem odpuszcza","Mówi że jest na diecie ale je wszystko","Naprawdę się trzyma i jest z siebie dumny/a"],                                as:["Trzymam się ściśle przez tydzień potem odpuszczam","Mówię że jestem na diecie ale jem wszystko","Naprawdę się trzymam i jestem z siebie dumny/a"]},
+  {q:"Co [imię] robi gdy słyszy nieprawdziwą plotkę o sobie?",                     qs:"Co robisz gdy słyszysz nieprawdziwą plotkę o sobie?",                               a:["Prostuje od razu i głośno","Udaje że nie słyszał/a","Śmieje się bo jest lepsza od prawdy"],                                                                               as:["Prostuję od razu i głośno","Udaję że nie słyszałem/am","Śmieję się bo jest lepsza od prawdy"]},
+  {q:"Jak [imię] zachowuje się na pikniku gdy zaczyna padać?",                     qs:"Jak zachowujesz się na pikniku gdy zaczyna padać?",                                  a:["Natychmiast pakuje manatki","Zostaje – trochę deszczu nie zaszkodzi","Już wcześniej wiedział/a że tak będzie i mówi to wszystkim"],                                      as:["Natychmiast pakuję manatki","Zostaję – trochę deszczu nie zaszkodzi","Już wcześniej wiedziałem/am że tak będzie i mówię to wszystkim"]},
+  {q:"Co [imię] robi gdy dostanie dziwny prezent którego nie chce?",               qs:"Co robisz gdy dostaniesz dziwny prezent którego nie chcesz?",                       a:["Dziękuje szczerze i wyrzuca po tygodniu","Pyta wprost skąd taki pomysł","Trzyma na widoku gdy tamta osoba przychodzi"],                                                   as:["Dziękuję szczerze i wyrzucam po tygodniu","Pytam wprost skąd taki pomysł","Trzymam na widoku gdy tamta osoba przychodzi"]},
+  {q:"Jak [imię] spędza ostatnią godzinę przed snem?",                             qs:"Jak spędzasz ostatnią godzinę przed snem?",                                          a:["Scrolluje telefon mimo że wie że nie powinien/powinna","Czyta lub ogląda coś spokojnego","Leży i myśli o wszystkich niezręcznych sytuacjach z przeszłości"],              as:["Scrolluję telefon mimo że wiem że nie powinienem/powinnam","Czytam lub oglądam coś spokojnego","Leżę i myślę o wszystkich niezręcznych sytuacjach z przeszłości"]},
+  {q:"Co [imię] robi gdy automat z kawą nie wydaje reszty?",                       qs:"Co robisz gdy automat z kawą nie wydaje reszty?",                                   a:["Potrząsa automatem ze złością","Wzrusza ramionami i idzie dalej","Szuka obsługi technicznej przez pół godziny"],                                                           as:["Potrząsam automatem ze złością","Wzruszam ramionami i idę dalej","Szukam obsługi technicznej przez pół godziny"]},
+  {q:"Jak [imię] zachowuje się gdy ktoś spoileruje mu/jej serial?",                qs:"Jak zachowujesz się gdy ktoś spoileruje ci serial?",                                 a:["Wybucha i nie może się uspokoić","Udaje że mu/jej to nie przeszkadza","Spokojnie mówi że woli nie wiedzieć"],                                                             as:["Wybucham i nie mogę się uspokoić","Udaję że mi to nie przeszkadza","Spokojnie mówię że wolę nie wiedzieć"]},
+  {q:"Co [imię] robi gdy musi zadzwonić na infolinię?",                            qs:"Co robisz gdy musisz zadzwonić na infolinię?",                                      a:["Odkłada to tygodniami","Dzwoni od razu – chce mieć to z głowy","Prosi kogoś bliskiego żeby zadzwonił/a za niego/nią"],                                                   as:["Odkładam to tygodniami","Dzwonię od razu – chcę mieć to z głowy","Proszę kogoś bliskiego żeby zadzwonił/a za mnie"]},
+  {q:"Jak [imię] tłumaczy się gdy spóźni się na spotkanie?",                       qs:"Jak tłumaczysz się gdy spóźnisz się na spotkanie?",                                 a:["Szczerze mówi że po prostu za późno wyszedł/wyszła","Zawsze ma gotową historyjkę","Pisze że jest już blisko gdy dopiero wychodzi"],                                      as:["Szczerze mówię że po prostu za późno wyszedłem/wyszłam","Zawsze mam gotową historyjkę","Piszę że jestem już blisko gdy dopiero wychodzę"]},
+  {q:"Co [imię] robi gdy ktoś pyta go/ją o zdanie a jemu/jej naprawdę wszystko jedno?", qs:"Co robisz gdy ktoś pyta cię o zdanie a tobie naprawdę wszystko jedno?",      a:["Mówi wprost że nie ma preferencji","Wymyśla jakąś odpowiedź żeby skończyć temat","Pyta co tamta osoba woli i popiera jej wybór"],                                          as:["Mówię wprost że nie mam preferencji","Wymyślam jakąś odpowiedź żeby skończyć temat","Pytam co tamta osoba woli i popieram jej wybór"]},
+  {q:"Jak [imię] zachowuje się gdy ktoś przy nim/niej fałszuje piosenkę?",         qs:"Jak zachowujesz się gdy ktoś przy tobie fałszuje piosenkę?",                        a:["Subtelnie przestaje śpiewać sam/a","Śpiewa głośniej żeby zagłuszyć","Mówi wprost że to trochę nie ta tonacja"],                                                            as:["Subtelnie przestaję śpiewać sam/a","Śpiewam głośniej żeby zagłuszyć","Mówię wprost że to trochę nie ta tonacja"]},
+  {q:"Co [imię] robi ostatniego dnia urlopu?",                                      qs:"Co robisz ostatniego dnia urlopu?",                                                 a:["Myśli o pracy i się nakręca","Żyje chwilą do ostatniej sekundy","Ma wszystko w dupie"],                                                                                    as:["Myślę o pracy i się nakręcam","Żyję chwilą do ostatniej sekundy","Mam wszystko w dupie"]},
+  {q:"Jak [imię] reaguje gdy ktoś mówi że jego/jej ulubiony zespół jest kiepski?", qs:"Jak reagujesz gdy ktoś mówi że twój ulubiony zespół jest kiepski?",                 a:["Broni zajadle z faktami","Wzrusza ramionami – każdy ma swój gust","Urywa kontakt z tą osobą na jakiś czas"],                                                               as:["Bronię zajadle z faktami","Wzruszam ramionami – każdy ma swój gust","Urywam kontakt z tą osobą na jakiś czas"]},
+  {q:"Co [imię] robi gdy nie może zasnąć z powodu głośnych sąsiadów?",            qs:"Co robisz gdy nie możesz zasnąć z powodu głośnych sąsiadów?",                       a:["Zakłada słuchawki i próbuje dalej","Puka do ściany albo dzwoni do drzwi","Leży wściekły/a ale nic nie robi"],                                                             as:["Zakładam słuchawki i próbuję dalej","Pukam do ściany albo dzwonię do drzwi","Leżę wściekły/a ale nic nie robię"]},
+  {q:"Jak [imię] zachowuje się gdy ma coś zrobić pierwszy raz?",                   qs:"Jak zachowujesz się gdy masz coś zrobić pierwszy raz?",                              a:["Szuka informacji przez tydzień zanim zacznie","Rzuca się na głęboką wodę bez przygotowania","Pyta kogoś kto już to robił"],                                               as:["Szukam informacji przez tydzień zanim zacznę","Rzucam się na głęboką wodę bez przygotowania","Pytam kogoś kto już to robił"]},
+  {q:"Kto z graczy jako pierwszy rzuciłby wszystko i wyjechał w Bieszczady?",              qs:"Kto z graczy jako pierwszy rzuciłby wszystko i wyjechał w Bieszczady?",              a:[],type:"players"},
+  {q:"Kto z graczy najdłużej potrafi milczeć gdy jest na kogoś zły?",                     qs:"Kto z graczy najdłużej potrafi milczeć gdy jest na kogoś zły?",                     a:[],type:"players"},
+  {q:"Kto z graczy byłby najlepszym politykiem?",                                          qs:"Kto z graczy byłby najlepszym politykiem?",                                          a:[],type:"players"},
+  {q:"Kto z graczy najszybciej przepije wszystkie żetony na prawdziwej imprezie?",        qs:"Kto z graczy najszybciej przepije wszystkie żetony na prawdziwej imprezie?",        a:[],type:"players"},
+  {q:"Kto z graczy ma największy chaos w telefonie?",                                      qs:"Kto z graczy ma największy chaos w telefonie?",                                      a:[],type:"players"},
+  {q:"Kto z graczy jako ostatni przyznałby się do błędu?",                                qs:"Kto z graczy jako ostatni przyznałby się do błędu?",                                a:[],type:"players"},
+  {q:"Kto z graczy przeżyłby najdłużej na bezludnej wyspie?",                            qs:"Kto z graczy przeżyłby najdłużej na bezludnej wyspie?",                            a:[],type:"players"},
+  {q:"Kto z graczy jest najbardziej prawdopodobnym autorem anonimowego donosu?",          qs:"Kto z graczy jest najbardziej prawdopodobnym autorem anonimowego donosu?",          a:[],type:"players"},
+  {q:"Kto z graczy płakałby na ślubie obcej osoby?",                                      qs:"Kto z graczy płakałby na ślubie obcej osoby?",                                      a:[],type:"players"},
+  {q:"Kto z graczy jako pierwszy zasnąłby na nudnym wykładzie?",                          qs:"Kto z graczy jako pierwszy zasnąłby na nudnym wykładzie?",                          a:[],type:"players"},
+  {q:"Kto z graczy najchętniej kłamie że już jedzie gdy jeszcze nawet nie wstał z kanapy?", qs:"Kto z graczy najchętniej kłamie że już jedzie gdy jeszcze nawet nie wstał z kanapy?", a:[],type:"players"},
+  {q:"Kto z graczy byłby najgroźniejszy jako szef?",                                      qs:"Kto z graczy byłby najgroźniejszy jako szef?",                                      a:[],type:"players"},
+  {q:"Kto z graczy ma największy talent do wchodzenia w kłopoty bez złych intencji?",    qs:"Kto z graczy ma największy talent do wchodzenia w kłopoty bez złych intencji?",    a:[],type:"players"},
+  {q:"Kto z graczy jako pierwszy zdradza tajemnicę gdy jest pod wpływem?",               qs:"Kto z graczy jako pierwszy zdradza tajemnicę gdy jest pod wpływem?",               a:[],type:"players"},
+  {q:"Kto z graczy najlepiej poradziłby sobie w apokalipsie zombie?",                     qs:"Kto z graczy najlepiej poradziłby sobie w apokalipsie zombie?",                     a:[],type:"players"},
+  {q:"Kto z graczy skończyłby w więzieniu?",                                               qs:"Kto z graczy skończyłby w więzieniu?",                                               a:[],type:"players"},
+  {q:"Kto z graczy jest najbardziej prawdopodobnym przyszłym miliarderem?",               qs:"Kto z graczy jest najbardziej prawdopodobnym przyszłym miliarderem?",               a:[],type:"players"},
+  {q:"Kto z graczy nagrałby TikToka z tańcem i wrzucił bez mrugnięcia okiem?",           qs:"Kto z graczy nagrałby TikToka z tańcem i wrzucił bez mrugnięcia okiem?",           a:[],type:"players"},
+  {q:"Kto z graczy najpewniej płakałby przy reklamie z psem?",                            qs:"Kto z graczy najpewniej płakałby przy reklamie z psem?",                            a:[],type:"players"},
+  {q:"Kto z graczy byłby pierwszą ofiarą w horrorze?",                                    qs:"Kto z graczy byłby pierwszą ofiarą w horrorze?",                                    a:[],type:"players"},
 ];
 /* ═══════════════════════════════════════════════════════════════ */
 
@@ -1760,11 +1772,11 @@ function renderSubj(){
   const ac=$('sj-ans'); ac.innerHTML='';
   const isPlayerType=q.type==='players';
   const answers=getQAnswers(GS.ri);
-  $('sj-q').textContent=isPlayerType ? q.q : qForSubject(q.q);
+  $('sj-q').textContent=q.qs;
   answers.forEach((a,i)=>{
     const btn=document.createElement('button');
     btn.className='abtn';
-    const displayAnswer=isPlayerType?a:answerForSubject(a);
+    const displayAnswer=isPlayerType?a:(q.as?q.as[i]:a);
     btn.innerHTML=`<div class="anum" style="${i==_sjPending?'background:var(--text);color:var(--bg);border-color:var(--text);':''}">${i+1}</div><span>${displayAnswer}</span>`;
     btn.onclick=()=>{ _sjPending=i; renderSubj(); };
     ac.appendChild(btn);
@@ -2390,9 +2402,9 @@ function copyMarkedForReview(){
     lines.push(`ORYGINAŁ: ${item.q}`);
     lines.push(`DLA INNYCH: ${item.q.replace(/\[imię\]/g,'[Temat]')}`);
     if(hasName){
-      lines.push(`DLA TEMATU (auto): ${qForSubject(item.q)}`);
+      lines.push(`DLA TEMATU: ${item.qs||'—'}`);
       lines.push('ODPOWIEDZI:');
-      item.a.forEach((a,j)=>lines.push(`  ${j+1}. oryg: ${a}  →  temat: ${answerForSubject(a)}`));
+      item.a.forEach((a,j)=>lines.push(`  ${j+1}. oryg: ${a}  →  temat: ${item.as?item.as[j]:'—'}`));
     } else {
       lines.push('(pytanie bez [imię] — brak transformacji dla Tematu)');
     }
@@ -2463,7 +2475,7 @@ function renderQBrowser(){
 function renderQCardReported(div, idx, editing){
   const item=QS[idx];
   const qOther=item.q.replace(/\[imię\]/g,'[Temat]');
-  const qSubj=item.q.includes('[imię]')?qForSubject(item.q):'—';
+  const qSubj=item.qs||'—';
   if(!editing){
     div.innerHTML=`
       <div style="display:flex;align-items:flex-start;gap:8px">
@@ -2482,7 +2494,7 @@ function renderQCardReported(div, idx, editing){
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px solid var(--rim);padding-top:6px">
             ${[0,1,2].map(j=>`
               <div style="font-size:11px;color:var(--muted)">${j+1}. ${item.a[j]}</div>
-              <div style="font-size:11px;color:#a78bfa66">${j+1}. ${item.q.includes('[imię]')?answerForSubject(item.a[j]):'—'}</div>`).join('')}
+              <div style="font-size:11px;color:#a78bfa66">${j+1}. ${item.as?item.as[j]:'—'}</div>`).join('')}
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;align-items:center">
@@ -2505,10 +2517,9 @@ function renderQCardReported(div, idx, editing){
           <div style="display:flex;align-items:center;gap:6px">
             <div style="width:18px;height:18px;border-radius:4px;background:var(--rim);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">${j+1}</div>
             <input id="eq-a-${idx}-${j}" type="text" data-1p-ignore data-lpignore="true" data-form-type="other" autocomplete="off" value="${item.a[j].replace(/"/g,'&quot;')}"
-              oninput="updateSubjPreview(${idx})"
               style="flex:1;min-width:0;background:var(--bg);border:1.5px solid var(--rim);border-radius:8px;padding:6px 8px;font-size:11px;color:var(--text);font-family:inherit">
           </div>
-          <div id="eq-prev-${idx}-${j}" style="font-size:11px;color:#a78bfa66;padding:0 4px;line-height:1.4">${item.q.includes('[imię]')?answerForSubject(item.a[j]):'—'}</div>
+          <div id="eq-prev-${idx}-${j}" style="font-size:11px;color:#a78bfa66;padding:0 4px;line-height:1.4">${item.as?item.as[j]||'—':'—'}</div>
         </div>`).join('')}
       <div style="display:flex;gap:8px;margin-top:2px">
         <button onclick="saveEditQ(${idx});renderQCardReported($('qcard-${idx}'),${idx},false)" style="flex:1;background:var(--text);color:var(--bg);border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">Zapisz</button>
@@ -2540,7 +2551,7 @@ function renderQCard(div, idx, editing){
   const item=QS[idx];
   // Both versions
   const qOther=item.q.replace(/\[imię\]/g,'[Temat]');
-  const qSubj=qForSubject(item.q);
+  const qSubj=item.qs||'—';
   const hasName=item.q.includes('[imię]');
 
   if(!editing){
@@ -2577,7 +2588,7 @@ function renderQCard(div, idx, editing){
           </div>
           <div style="display:flex;align-items:center;gap:6px;font-size:11px">
             <div style="width:18px;height:18px;border-radius:4px;background:var(--rim);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">${j+1}</div>
-            <span style="color:${hasName?'#a78bfa66':'var(--muted)'}">${hasName?answerForSubject(item.a[j]||''):'—'}</span>
+            <span style="color:${hasName?'#a78bfa66':'var(--muted)'}">${item.as?item.as[j]||'—':'—'}</span>
           </div>`).join('')}
       </div>`}`;
   } else {
@@ -2592,24 +2603,31 @@ function renderQCard(div, idx, editing){
       </div>
       <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Treść pytania <span style="color:var(--c3)">(użyj [imię] dla gracza Temat)</span></div>
       <textarea id="eq-q-${idx}" style="width:100%;background:var(--bg);border:1.5px solid var(--rim);border-radius:8px;padding:8px;font-size:12px;color:var(--text);font-family:inherit;resize:vertical;min-height:56px">${item.q}</textarea>
+      <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#a78bfa">Pytanie dla Tematu (2. osoba)</div>
+      <textarea id="eq-qs-${idx}" style="width:100%;background:#3730a322;border:1.5px solid #a78bfa55;border-radius:8px;padding:8px;font-size:12px;color:#a78bfa;font-family:inherit;resize:vertical;min-height:48px">${item.qs||''}</textarea>
       ${isPlayers?`
         <div style="background:var(--bg);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted);text-align:center;line-height:1.6">
           👥 Odpowiedziami będą <strong style="color:var(--text)">imiona graczy</strong> w danej rundzie
-        </div>`:`
+        </div>
+      `:`
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-        <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Odpowiedzi</div>
-        <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#a78bfa66">Podgląd dla Tematu</div>
+        <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Odpowiedzi (dla innych)</div>
+        <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#a78bfa">Odpowiedzi (dla Tematu)</div>
       </div>
       ${[0,1,2].map(j=>`
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:center">
           <div style="display:flex;align-items:center;gap:6px">
             <div style="width:18px;height:18px;border-radius:4px;background:var(--rim);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">${j+1}</div>
             <input id="eq-a-${idx}-${j}" type="text" data-1p-ignore data-lpignore="true" data-form-type="other" autocomplete="off" value="${(item.a[j]||'').replace(/"/g,'&quot;')}"
-              oninput="updateSubjPreview(${idx})"
               style="flex:1;min-width:0;background:var(--bg);border:1.5px solid var(--rim);border-radius:8px;padding:6px 8px;font-size:11px;color:var(--text);font-family:inherit">
           </div>
-          <div id="eq-prev-${idx}-${j}" style="font-size:11px;color:#a78bfa66;padding:0 4px;line-height:1.4">${hasName?answerForSubject(item.a[j]||''):'—'}</div>
-        </div>`).join('')}`}
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:18px;height:18px;border-radius:4px;background:#3730a344;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;color:#a78bfa">${j+1}</div>
+            <input id="eq-as-${idx}-${j}" type="text" data-1p-ignore data-lpignore="true" data-form-type="other" autocomplete="off" value="${(item.as?item.as[j]||'':'').replace(/"/g,'&quot;')}"
+              style="flex:1;min-width:0;background:#3730a322;border:1.5px solid #a78bfa55;border-radius:8px;padding:6px 8px;font-size:11px;color:#a78bfa;font-family:inherit">
+          </div>
+        </div>`).join('')}
+      `}
       <div style="display:flex;gap:8px;margin-top:2px">
         <button onclick="saveEditQ(${idx})" style="flex:1;background:var(--text);color:var(--bg);border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">Zapisz</button>
         <button onclick="cancelEditQ(${idx})" style="flex:1;background:var(--card);color:var(--muted);border:1.5px solid var(--rim);border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer">Anuluj</button>
@@ -2617,14 +2635,7 @@ function renderQCard(div, idx, editing){
   }
 }
 
-function updateSubjPreview(idx){
-  // Live update subject previews while typing answers
-  [0,1,2].forEach(j=>{
-    const inp=$('eq-a-'+idx+'-'+j);
-    const prev=$('eq-prev-'+idx+'-'+j);
-    if(inp&&prev) prev.textContent=QS[idx].q.includes('[imię]')?answerForSubject(inp.value):'—';
-  });
-}
+
 
 function toggleEditQType(idx){
   QS[idx].type=QS[idx].type==='players'?undefined:'players';
@@ -2682,7 +2693,7 @@ function toggleAddQuestion(){
     if(tBtn){tBtn.textContent='📝 Własne';tBtn.style.borderColor='var(--rim)';tBtn.style.color='var(--muted)';tBtn.style.background='transparent';}
     if(ans) ans.style.display='block';
     if(pl) pl.style.display='none';
-    ['nq-q','nq-a1','nq-a2','nq-a3'].forEach(id=>{ const el=$(id); if(el) el.value=''; });
+    ['nq-q','nq-qs','nq-a1','nq-a2','nq-a3','nq-as1','nq-as2','nq-as3'].forEach(id=>{ const el=$(id); if(el) el.value=''; });
     [1,2,3].forEach(j=>{ const el=$('nq-prev'+j); if(el) el.textContent='—'; });
     setTimeout(()=>{ const q=$('nq-q'); if(q) q.focus(); },50);
   }
@@ -2694,14 +2705,17 @@ function saveNewQuestion(){
 
   let entry;
   if(_newQType==='players'){
-    entry={q,a:[],type:'players'};
+    const qs=($('nq-qs')?.value||'').trim()||q;
+    entry={q,qs,a:[],type:'players'};
   } else {
     const a=[1,2,3].map(j=>($('nq-a'+j)?.value||'').trim());
     if(a.some(v=>!v)){
       [1,2,3].forEach(j=>{ const el=$('nq-a'+j); if(el&&!el.value.trim()){el.style.borderColor='var(--c0)';setTimeout(()=>el.style.borderColor='',1500);} });
       return;
     }
-    entry={q,a};
+    const qs=($('nq-qs')?.value||'').trim()||q;
+    const as=[1,2,3].map(j=>($('nq-as'+j)?.value||'').trim());
+    entry={q,qs,a,as};
   }
 
   QS.push(entry);
@@ -2725,12 +2739,15 @@ function saveEditQ(idx){
   const newQ=qEl?qEl.value.trim():'';
   if(!newQ)return;
   const isPlayers=QS[idx]?.type==='players';
-  let newA=[];
+  const newQs=($('eq-qs-'+idx)?.value||'').trim()||newQ;
+  let newA=[], newAs=[];
   if(!isPlayers){
     newA=[0,1,2].map(j=>{ const el=$('eq-a-'+idx+'-'+j); return el?el.value.trim():''; });
     if(newA.some(a=>!a))return;
+    newAs=[0,1,2].map(j=>{ const el=$('eq-as-'+idx+'-'+j); return el?el.value.trim():''; });
   }
-  const entry={q:newQ,a:newA};
+  const entry={q:newQ,qs:newQs,a:newA};
+  if(!isPlayers) entry.as=newAs;
   if(isPlayers) entry.type='players';
   QS[idx]=entry;
   try{
