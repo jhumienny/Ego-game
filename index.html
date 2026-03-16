@@ -893,8 +893,10 @@ function startPoll(){
                 ? QS.map((_,i)=>i).filter(i=>(_qCatMap[i]||[]).includes(_selectedCat))
                 : QS.map((_,i)=>i);
               const qPoolFinal=qPool.length>0?qPool:QS.map((_,i)=>i);
+              if(qPoolFinal.length===0) return; // no questions yet
               let qp=shuf([...qPoolFinal]);
-              while(qp.length<sub.length)qp=[...qp,...shuf([...qPoolFinal])];
+              let _safety=0;
+              while(qp.length<sub.length && _safety++<200)qp=[...qp,...shuf([...qPoolFinal])];
               const qSeq=qp.slice(0,sub.length);
               const playerCount=GS.players.filter(Boolean).length;
               const playerNames=GS.players.map((p,i)=>p?{name:p.name,slot:i}:null).filter(Boolean);
@@ -1310,8 +1312,11 @@ async function hostStart(){
     ? QS.map((_,i)=>i).filter(i=>(_qCatMap[i]||[]).includes(_selectedCat))
     : QS.map((_,i)=>i);
   const qPoolFinal=qPool.length>0?qPool:QS.map((_,i)=>i);
+  if(qPoolFinal.length===0){alert('Brak pytań w bazie! Dodaj pytania aby rozpocząć grę.');return;}
   qp=shuf([...qPoolFinal]);
-  while(qp.length<sub.length) qp=[...qp,...shuf([...qPoolFinal])];
+  // Safe fill — avoid infinite loop if pool smaller than sub
+  let safety=0;
+  while(qp.length<sub.length && safety++<200) qp=[...qp,...shuf([...qPoolFinal])];
   const qSeq=qp.slice(0,sub.length);
 
   // For player-type questions, bake player names as answers
