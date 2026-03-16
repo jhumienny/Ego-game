@@ -424,7 +424,10 @@ function norm(gs){
   if(!gs)return gs;
   // Firebase returns arrays-with-nulls as plain objects — convert back to real arrays
   const toArr4 = v => {
-    if(Array.isArray(v)) { while(v.length<8) v.push(null); return v; }
+    if(Array.isArray(v)) {
+      while(v.length<8) v.push(null); // always keep 8 max slots internally
+      return v;
+    }
     if(v && typeof v==='object') {
       const a=[null,null,null,null,null,null,null,null];
       Object.keys(v).forEach(k=>{ const n=parseInt(k); if(n>=0&&n<8) a[n]=v[k]; });
@@ -748,7 +751,9 @@ function renderLobby(){
   if(mySlot!==null){
     $('lob-name-row').style.display='flex';
     const curName=players[mySlot]?.name||'';
-    if($('lob-name-inp').value==='') $('lob-name-inp').value=curName;
+    // Only pre-fill once; after that user manages it themselves
+    const inp=$('lob-name-inp');
+    if(inp && !inp.dataset.touched) inp.placeholder=`Aktualne: ${curName}`;
   }
 
   // Ready button
@@ -806,8 +811,9 @@ async function toggleReady(){
 }
 
 async function changeName(){
-  const newName=$('lob-name-inp').value.trim();
-  if(!newName||mySlot===null)return;
+  const inp=$('lob-name-inp');
+  const newName=(inp?.value||'').trim();
+  if(!newName||mySlot===null){inp?.focus();return;}
   // Check duplicate
   const norm2=newName.toLowerCase();
   const dup=GS.players.some((p,i)=>p&&i!==mySlot&&p.name.trim().toLowerCase()===norm2);
@@ -820,7 +826,8 @@ async function changeName(){
     patch[`ready/${mySlot}`]=false;
     await fbPatch(`games/${gameId}`,patch);
     GS.players[mySlot].name=newName;
-    $('lob-name-inp').value='';
+    // Clear input, update placeholder
+    if(inp){ inp.value=''; inp.dataset.touched='1'; inp.placeholder=`Aktualne: ${newName}`; }
     renderLobby();
   }catch(e){console.error('changeName',e);}
 }
