@@ -1406,7 +1406,7 @@ function renderSlotsGrid(gs,name){
     div.innerHTML=`
       <div class="slot-av" style="background:${C(i)}22;color:${C(i)}">${p?p.name.charAt(0).toUpperCase():(i+1)}</div>
       <div class="slot-name" style="color:${p?C(i):'var(--muted)'}">${p?p.name:'Wolny slot'}</div>
-      <div class="slot-pts">${p?p.pts+' pkt':'Kliknij aby dołączyć'}</div>
+      <div class="slot-pts">${p?p.pts+' 🪙':'Kliknij aby dołączyć'}</div>
       ${isMine?'<span class="slot-badge sb-you">ty</span>':(p?'':'<span class="slot-badge sb-free">wolny</span>')}
     `;
     if(!p||isMine)div.onclick=()=>{
@@ -1958,7 +1958,7 @@ function renderReveal(){
       <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;color:${cnt>0?'#a5b4fc':'#6b6b80'};line-height:1">TO TWOJE PYTANIE</div>
       <div style="font-size:13px;color:#c7d2fe;margin-top:8px;line-height:1.6">
         <strong style="color:#fff">${cnt} z ${guessers.length}</strong> graczy odgadło Twoją odpowiedź<br>
-        ${cnt>0?`<strong style="color:#a5b4fc">+${cnt} ${cnt===1?'punkt':cnt<5?'punkty':'punktów'} dla Ciebie!</strong>`:`<span style="color:#6b6b80">Nikt nie trafił — 0 punktów</span>`}
+        ${cnt>0?`<strong style="color:#a5b4fc">+${cnt} ${cnt===1?'żeton':cnt<5?'żetony':'żetonów'} dla Ciebie!</strong>`:`<span style="color:#6b6b80">Nikt nie trafił — 0 żetonów</span>`}
       </div>
     </div>`;
   }
