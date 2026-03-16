@@ -1628,6 +1628,7 @@ function render(){
   if(_lastRi !== null && _lastRi !== currentRi){
     _localVote=null; _confirmedVote=null; _sjPick=null; _sjPending=null;
     _swapsLeft=2; _sjSwapsLeft=2; _lastSwapAt=null; _localBet=1;
+    _reportedThisQ=false;
   }
   _lastRi = currentRi;
 
@@ -2150,7 +2151,17 @@ let _qReported={}; // idx → true
   try{ _qReported=JSON.parse(localStorage.getItem('wiem_qreported')||'{}'); }catch(e){}
 })();
 
+let _reportedThisQ=false; // track if current question was reported this render cycle
+
 function resetReportBtns(screenSuffix){
+  // If this question was already reported, keep swap button visible
+  if(_reportedThisQ){
+    const rb=$('report-btn-'+screenSuffix);
+    const sb=$('swap-btn-'+screenSuffix);
+    if(rb){ rb.textContent='✓ Zgłoszono!'; rb.style.color='var(--c2)'; rb.disabled=true; }
+    if(sb){ sb.style.display='block'; }
+    return;
+  }
   const rb=$('report-btn-'+screenSuffix);
   const sb=$('swap-btn-'+screenSuffix);
   if(rb){ rb.textContent='⚑ Zgłoś błąd w pytaniu'; rb.style.color=''; rb.disabled=false; }
@@ -2162,6 +2173,7 @@ function reportCurrentQuestion(screenSuffix){
   const idx=GS.qSeq?.[GS.ri];
   if(idx===undefined||idx===null)return;
   _qReported[idx]=true;
+  _reportedThisQ=true;
   try{ localStorage.setItem('wiem_qreported',JSON.stringify(_qReported)); }catch(e){}
   updateReportedTabCount();
   const rb=$('report-btn-'+screenSuffix);
@@ -2196,6 +2208,7 @@ async function swapReported(screenSuffix){
   _sjPending=null; _localVote=null; _confirmedVote=null;
   try{
     await fbPut(`games/${gameId}`,GS);
+    _reportedThisQ=false;
     if(sb){ sb.textContent='✓ Zamieniono!'; sb.style.color='var(--c2)'; }
     render();
   }catch(e){
