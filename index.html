@@ -291,10 +291,10 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     <div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Ile żetonów stawiasz?</div>
     <div style="display:flex;gap:8px">
       <button id="bet-1" class="abtn" onclick="setBet(1)" style="flex:1;justify-content:center;padding:14px 10px">
-        <div class="anum" id="bet-1-num">1</div><span>1 żeton</span>
+        <div class="anum" id="bet-1-num">1</div><span>żeton</span>
       </button>
       <button id="bet-2" class="abtn" onclick="setBet(2)" style="flex:1;justify-content:center;padding:14px 10px">
-        <div class="anum" id="bet-2-num">2</div><span>2 żetony</span>
+        <div class="anum" id="bet-2-num">2</div><span>żetony</span>
       </button>
     </div>
     <div style="font-size:11px;color:var(--muted);margin-top:6px;text-align:center">Trafisz → zyskujesz. Nie trafisz → tracisz żetony.</div>
@@ -1674,10 +1674,22 @@ function mkSbar(id){
   const el=$(id);if(!el||!GS)return;
   const max=GS.maxPlayers||4;
   const poolHtml=`<div class="sbi" style="border-left:1px solid var(--rim);padding-left:6px"><div class="sbi-n" style="color:var(--muted)">pula</div><div class="sbi-v" style="color:var(--c3)">${GS.pool??0} 🪙</div></div>`;
+  const codeHtml=gameId?`<div onclick="copySbarCode()" title="Skopiuj kod" style="margin-left:auto;padding:2px 8px;border-radius:6px;font-size:10px;letter-spacing:2px;color:var(--muted);cursor:pointer;white-space:nowrap;font-family:'Bebas Neue',sans-serif" id="sbar-code-${id}">${gameId}</div>`:'';
   el.innerHTML=GS.players.slice(0,max).map((p,i)=>p
     ?`<div class="sbi"><div class="sbi-n" style="color:${C(i)}">${p.name}</div><div class="sbi-v" style="color:${C(i)}">${p.pts} 🪙</div></div>`
     :''
-  ).join('')+poolHtml;
+  ).join('')+poolHtml+codeHtml;
+}
+
+function copySbarCode(){
+  if(!gameId)return;
+  navigator.clipboard?.writeText(gameId).catch(()=>{});
+  document.querySelectorAll('[id^="sbar-code-"]').forEach(el=>{
+    const orig=el.textContent;
+    el.textContent='✓';
+    el.style.color='var(--c2)';
+    setTimeout(()=>{el.textContent=orig;el.style.color='';},1500);
+  });
 }
 
 function buildAns(cid,answers,locked,chosen,correct,cb){
