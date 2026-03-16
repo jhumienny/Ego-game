@@ -452,6 +452,7 @@ function norm(gs){
   gs.ready      = gs.ready || {};
   gs.maxPlayers = gs.maxPlayers || 4;
   gs.swapAt     = gs.swapAt || null;
+  gs.usedQs     = gs.usedQs ? (Array.isArray(gs.usedQs)?gs.usedQs:Object.values(gs.usedQs)) : [];
   // Normalize vote keys AND values to integers
   if(gs.votes && typeof gs.votes==='object'){
     const v={};
@@ -889,14 +890,14 @@ function render(){
     if(!amSJ()){
       _localVote = null;
       _confirmedVote = null;
-      // Remove this player's old vote from Firebase so the voted check is clean
       if(mySlot!==null && gameId){
         const p={}; p[`votes/${mySlot}`]=null;
         fbPatch(`games/${gameId}`,p).catch(()=>{});
       }
       if(GS.votes) delete GS.votes[mySlot];
-      showSwapToast();
     }
+    // Show toast for EVERYONE (including subject)
+    showSwapToast();
   }
 
   // If on slots screen, keep updating it
@@ -925,7 +926,7 @@ function showSwapToast(){
     t.style.cssText='position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;background:#1e1b4b;border:2px solid #818cf8;color:#a5b4fc;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;text-align:center;max-width:300px;box-shadow:0 4px 20px #0006;animation:pop .3s ease;';
     document.body.appendChild(t);
   }
-  t.textContent=`🔄 ${name} zmienił/a pytanie!`;
+  t.textContent=`🔄 ${name} ${gW(name,'zmienił','zmieniła')} pytanie!`;
   t.style.display='block';
   clearTimeout(t._timer);
   t._timer=setTimeout(()=>{t.style.display='none';},3500);
@@ -1045,24 +1046,34 @@ let _lastSwapAt=null; // track last swap timestamp seen
 async function swapQuestionSJ(){
   if(_sjSwapsLeft<=0)return;
   _sjSwapsLeft--;
-  const used=GS.qSeq||[];
-  const available=QS.map((_,i)=>i).filter(i=>!used.includes(i));
+
+  // All questions ever used: planned qSeq + history of swapped-out ones
+  const allUsed=new Set([...(GS.qSeq||[]),...(GS.usedQs||[])]);
+  // Must also exclude current question being swapped
+  allUsed.add(GS.qSeq[GS.ri]);
+  const available=QS.map((_,i)=>i).filter(i=>!allUsed.has(i));
+  // If pool exhausted, allow anything except current question
   const pool=available.length>0 ? available : QS.map((_,i)=>i).filter(i=>i!==GS.qSeq[GS.ri]);
   if(!pool.length)return;
   const newQIdx=pool[Math.floor(Math.random()*pool.length)];
+
+  // Track old question as used so it never comes back
+  const usedQs=[...(GS.usedQs||[]),GS.qSeq[GS.ri]];
   const newSeq=[...GS.qSeq];
   newSeq[GS.ri]=newQIdx;
+
   GS.qSeq=newSeq;
+  GS.usedQs=usedQs;
   GS.votes={};
   GS.sa=-1;
-  GS.phase='subject'; // subject must answer the new question first
+  GS.phase='subject';
   const swapAt=Date.now();
   GS.swapAt=swapAt;
-  _lastSwapAt=swapAt;
+  // DON'T set _lastSwapAt here — let render() detect it for everyone including subject
   _allVotedAt=null;
   _sjPending=null; _localVote=null; _confirmedVote=null;
   try{ await fbPut(`games/${gameId}`,GS); } catch(e){ console.error('swap write',e); }
-  renderSubj(); // subject answers the new question
+  renderSubj();
 }
 
 function _swapBtnLabel(left){ return left>0 ? `🔄 Zmień pytanie (zostało: ${left})` : '🔄 Brak wymian'; }
