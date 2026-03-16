@@ -512,6 +512,26 @@ const QS=[
   {q:"Jak [imię] reaguje gdy ktoś mówi że jego/jej ulubiony zespół jest kiepski?", a:["Broni zajadle z faktami","Wzrusza ramionami – każdy ma swój gust","Urywa kontakt z tą osobą na jakiś czas"]},
   {q:"Co [imię] robi gdy nie może zasnąć z powodu głośnych sąsiadów?",            a:["Zakłada słuchawki i próbuje dalej","Puka do ściany albo dzwoni do drzwi","Leży wściekły/a ale nic nie robi"]},
   {q:"Jak [imię] zachowuje się gdy ma coś zrobić pierwszy raz?",                   a:["Researachuje temat przez tydzień zanim zacznie","Rzuca się na głęboką wodę bez przygotowania","Pyta kogoś kto już to robił"]},
+  {q:"Kto z graczy jako pierwszy rzuciłby wszystko i wyjechał w Bieszczady?",              a:[],type:"players"},
+  {q:"Kto z graczy najdłużej potrafi milczeć gdy jest na kogoś zły?",                     a:[],type:"players"},
+  {q:"Kto z graczy byłby najlepszym politykiem?",                                          a:[],type:"players"},
+  {q:"Kto z graczy najszybciej przepije wszystkie żetony na prawdziwej imprezie?",        a:[],type:"players"},
+  {q:"Kto z graczy miałby największy chaos w telefonie?",                                  a:[],type:"players"},
+  {q:"Kto z graczy jako ostatni przyznałby się do błędu?",                                a:[],type:"players"},
+  {q:"Kto z graczy przeżyłby najdłużej na bezludnej wyspie?",                            a:[],type:"players"},
+  {q:"Kto z graczy jest najbardziej prawdopodobnym autorem anonimowego donosu?",          a:[],type:"players"},
+  {q:"Kto z graczy płakałby na ślubie obcej osoby?",                                      a:[],type:"players"},
+  {q:"Kto z graczy jako pierwszy zasnąłby na nudnym wykładzie?",                          a:[],type:"players"},
+  {q:"Kto z graczy najchętniej kłamie że już jedzie gdy jeszcze nawet nie wstał z kanapy?", a:[],type:"players"},
+  {q:"Kto z graczy byłby najgroźniejszy jako szef?",                                      a:[],type:"players"},
+  {q:"Kto z graczy ma największy talent do wchodzenia w kłopoty bez złych intencji?",    a:[],type:"players"},
+  {q:"Kto z graczy jako pierwszy zdradza tajemnicę gdy jest pod wpływem?",               a:[],type:"players"},
+  {q:"Kto z graczy najlepiej poradziłby sobie w apokalipsie zombie?",                     a:[],type:"players"},
+  {q:"Kto z graczy skończyłby w więzieniu?",                                               a:[],type:"players"},
+  {q:"Kto z graczy jest najbardziej prawdopodobnym przyszłym miliarderem?",               a:[],type:"players"},
+  {q:"Kto z graczy nagrałby TikToka z tańcem i wrzucił bez mrugnięcia okiem?",           a:[],type:"players"},
+  {q:"Kto z graczy najpewniej płakałby przy reklamie z psem?",                            a:[],type:"players"},
+  {q:"Kto z graczy byłby pierwszą ofiarą w horrorze?",                                    a:[],type:"players"},
 ];
 /* ═══════════════════════════════════════════════════════════════ */
 
@@ -646,6 +666,7 @@ function answerForSubject(a){
     ['Kupi coś dużego','Kupię coś dużego'],
     ['Leniuchując w domu','Leniuchuję w domu'],
     ['Wychodząc ze znajomymi','Wychodzę ze znajomymi'],
+    ['nie nosi','nie noszę'],
     // single verbs
     ['Irytuje się','Irytuję się'],
     ['Scrolluje','Scrolluję'],['Zamawia','Zamawiam'],['Przegląda','Przeglądam'],
@@ -935,7 +956,7 @@ function startPoll(){
                 const qq=QS[qIdx];
                 if(qq&&qq.type==='players'){
                   const subjSlot=sub[ri];
-                  const opts=playerNames.filter(p=>p.slot!==subjSlot).map(p=>p.name);
+                  const opts=playerNames.map(p=>p.name);
                   if(opts.length>0) qAnswers[ri]=opts;
                 }
               });
@@ -1140,7 +1161,7 @@ async function claimSlot(slot,name){
       return;
     }
     GS=norm(dc(gs));
-    GS.players[slot]={name:name||'Gracz',pts:gs.players[slot]?.pts??10};
+    GS.players[slot]={name:name||'Gracz',pts:10};
     await fbPut(`games/${gameId}`,GS);
     mySlot=slot;isHost=(slot===0);
     sessionStorage.setItem('ego_sess',JSON.stringify({gameId,mySlot}));
@@ -1357,7 +1378,7 @@ async function hostStart(){
     if(q&&q.type==='players'){
       // Exclude the subject from their own question options
       const subjSlot=sub[ri];
-      const opts=playerNames.filter(p=>p.slot!==subjSlot).map(p=>p.name);
+      const opts=playerNames.map(p=>p.name);
       if(opts.length>0) qAnswers[ri]=opts;
     }
   });
@@ -1438,13 +1459,23 @@ const amSJ=()=>mySlot===SI();
 function mkSbar(id){
   const el=$(id);if(!el||!GS)return;
   const max=GS.maxPlayers||4;
-  const poolHtml=`<div class="sbi" style="border-left:1px solid var(--rim);padding-left:6px"><div class="sbi-n" style="color:var(--muted)">pula</div><div class="sbi-v" style="color:var(--c3)">${GS.pool??0} 🪙</div></div>`;
   el.innerHTML=GS.players.slice(0,max).map((p,i)=>p
     ?`<div class="sbi"><div class="sbi-n" style="color:${C(i)}">${p.name}</div><div class="sbi-v" style="color:${C(i)}">${p.pts} 🪙</div></div>`
     :''
-  ).join('')+poolHtml;
+  ).join('');
 
-  // Code row below sbar
+  // Pool row — separate card below scorebar
+  const poolRowId='pool-row-'+id;
+  let pr=$(poolRowId);
+  if(!pr){
+    pr=document.createElement('div');
+    pr.id=poolRowId;
+    pr.style.cssText='display:flex;align-items:center;justify-content:center;gap:6px;background:var(--card);border-radius:8px;padding:5px 12px;border:1.5px solid var(--c3)44;margin-top:4px';
+    el.parentNode.insertBefore(pr,el.nextSibling);
+  }
+  pr.innerHTML=`<span style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Pula</span><span style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:var(--c3)">${GS.pool??0} 🪙</span>`;
+
+  // Code row below pool row
   const codeRowId='code-row-'+id;
   let cr=$(codeRowId);
   if(!cr){
@@ -1452,8 +1483,8 @@ function mkSbar(id){
     cr.id=codeRowId;
     cr.onclick=copySbarCode;
     cr.title='Kliknij aby skopiować kod';
-    cr.style.cssText='text-align:center;cursor:pointer;font-size:11px;color:var(--muted);letter-spacing:3px;font-family:\'Bebas Neue\',sans-serif;padding:2px 0;margin-top:-6px';
-    el.parentNode.insertBefore(cr,el.nextSibling);
+    cr.style.cssText='text-align:center;cursor:pointer;font-size:11px;color:var(--muted);letter-spacing:3px;font-family:\'Bebas Neue\',sans-serif;padding:2px 0;margin-top:2px';
+    pr.parentNode.insertBefore(cr,pr.nextSibling);
   }
   cr.textContent=gameId||'';
 }
@@ -2312,12 +2343,20 @@ function renderQBrowser(){
   list.innerHTML='';
 
   if(_qTab==='reported'){
+    // Re-read from localStorage to always be fresh
+    try{ _qReported=JSON.parse(localStorage.getItem('wiem_qreported')||'{}'); }catch(e){}
+    updateReportedTabCount();
     const reportedIndices=Object.keys(_qReported).map(Number);
     if(countEl) countEl.textContent=`${reportedIndices.length} zgłoszonych`;
     if(reportedIndices.length===0){
       list.innerHTML=`<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px 0">Brak zgłoszonych błędów</div>`;
       return;
     }
+    // Clear all button
+    const clearDiv=document.createElement('div');
+    clearDiv.style.cssText='display:flex;justify-content:flex-end';
+    clearDiv.innerHTML=`<button onclick="clearAllReports()" style="padding:5px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;background:var(--card);color:var(--muted);border:1.5px solid var(--rim)">🗑 Wyczyść wszystkie</button>`;
+    list.appendChild(clearDiv);
     reportedIndices.forEach(realIdx=>{
       const div=document.createElement('div');
       div.id='qcard-'+realIdx;
@@ -2412,6 +2451,13 @@ function renderQCardReported(div, idx, editing){
 function startEditQReported(idx){
   const div=$('qcard-'+idx);
   if(div) renderQCardReported(div, idx, true);
+}
+
+function clearAllReports(){
+  _qReported={};
+  try{ localStorage.setItem('wiem_qreported','{}'); }catch(e){}
+  updateReportedTabCount();
+  renderQBrowser();
 }
 
 function dismissReport(idx){
