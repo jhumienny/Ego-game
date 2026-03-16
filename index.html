@@ -1468,7 +1468,7 @@ function renderLobby(){
     const curName=players[mySlot]?.name||'';
     const inp=$('lob-name-inp');
     if(inp){
-      inp.placeholder=`Aktualne: ${curName}`;
+      inp.placeholder=curName;
       // Never set .value from polling — user controls the field
     }
   }
@@ -1544,7 +1544,7 @@ async function changeName(){
     await fbPatch(`games/${gameId}`,patch);
     GS.players[mySlot].name=newName;
     // Clear input, update placeholder
-    if(inp){ inp.value=''; inp.dataset.touched='1'; inp.placeholder=`Aktualne: ${newName}`; }
+    if(inp){ inp.value=''; inp.dataset.touched='1'; inp.placeholder=newName; }
     renderLobby();
   }catch(e){console.error('changeName',e);}
 }
