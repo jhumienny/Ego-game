@@ -137,7 +137,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 <div class="app">
 
 <!-- hidden question browser trigger -->
-<button onclick="openQBrowser()" style="position:fixed;top:0;left:0;width:44px;height:44px;background:transparent;border:none;cursor:pointer;z-index:100;opacity:0" aria-label="Przeglądaj pytania"></button>
+<button id="admin-trigger" onclick="openQBrowser()" style="position:fixed;top:0;left:0;width:44px;height:44px;background:transparent;border:none;cursor:pointer;z-index:100;opacity:0;display:none" aria-label="Przeglądaj pytania"></button>
 
 <!-- ══ QUESTION BROWSER ══ -->
 <div class="scr" id="s-qbrowser">
@@ -674,7 +674,12 @@ document.addEventListener('keydown', e=>{
     if(!isInput) e.preventDefault();
   }
 }, true);
-const show=id=>{document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');};
+const show=id=>{
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
+  $(id).classList.add('on');
+  const trigger=$('admin-trigger');
+  if(trigger) trigger.style.display=id==='s-home'?'block':'none';
+};
 const shuf=a=>{const b=[...a];for(let i=b.length-1;i>0;i--){const j=~~(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
 const dc=o=>JSON.parse(JSON.stringify(o));
 
