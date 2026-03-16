@@ -848,6 +848,7 @@ let _sjPick=null;
 let _lastRi=null; // track round index to reset local state on round change
 let _allVotedAt=null; // timestamp when all votes first detected
 let _countdownTimer=null; // drives timed transitions under SSE
+let _voteRetryTimer=null; // retry fetch if last vote missed by race condition
 
 function startCountdown(ms, onTick, onDone){
   if(_countdownTimer) clearInterval(_countdownTimer);
@@ -932,12 +933,17 @@ function startPoll(){
         const msg=JSON.parse(ev.data);
         if(!msg||msg.data===null){stopPoll();return;}
         if(msg.path==='/'||!msg.path){GS=norm(msg.data);}
-        else{const gs=await fbGet(`games/${gameId}`);if(!gs){stopPoll();return;}GS=norm(gs);}
+        else{
+          await new Promise(r=>setTimeout(r,150));
+          const gs=await fbGet(`games/${gameId}`);if(!gs){stopPoll();return;}GS=norm(gs);
+        }
         await handleGSUpdate();
       }catch(e){console.error('SSE put error',e.message);}
     });
     _sseSource.addEventListener('patch',async()=>{
       try{
+        // Small delay to ensure Firebase write is fully committed before reading back
+        await new Promise(r=>setTimeout(r,250));
         const gs=await fbGet(`games/${gameId}`);
         if(!gs){stopPoll();return;}
         GS=norm(gs);await handleGSUpdate();
@@ -1033,32 +1039,47 @@ async function handleGSUpdate(){
     if(GS.phase==='voting'){
       const guessers=GS.players.filter((p,i)=>p&&i!==si);
       const allVoted=guessers.length>0&&guessers.every((p,gi)=>{const pi=GS.players.indexOf(p);return GS.votes[pi]!==undefined;});
+      const done=guessers.filter((p,gi)=>{const pi=GS.players.indexOf(p);return GS.votes[pi]!==undefined;}).length;
       if(allVoted){
-        if(!_allVotedAt) _allVotedAt=Date.now();
-        const remaining=Math.ceil((3000-(Date.now()-_allVotedAt))/1000);
-        if(remaining>0){
-          if($('sync-st'))$('sync-st').textContent=`Wszyscy zagłosowali! Wyniki za ${remaining}s…`;
-        } else {
-          _allVotedAt=null;
-          const next=norm(dc(GS)); next.phase='reveal';
-          let poolDelta=0;
-          next.players.forEach((p,i)=>{
-            if(!p||i===si)return;
-            const bet=parseInt(next.bets?.[i])||1;
-            if(next.votes[i]==next.sa){next.players[i].pts+=bet;next.players[si].pts++;poolDelta-=bet;poolDelta--;}
-            else{const actual=Math.min(bet,next.players[i].pts);next.players[i].pts=Math.max(0,next.players[i].pts-actual);poolDelta+=actual;}
-          });
-          next.pool=Math.max(0,(next.pool||0)+poolDelta);
-          const mode=next.gameMode||'rounds';
-          const anyBroke=next.players.some(p=>p&&p.pts<=0);
-          if(mode==='pool'&&(next.pool<=0||anyBroke))next.phase='ended';
-          else if(mode==='rounds'&&next.ri+1>=next.rt)next.phase='ended';
-          GS=next; await writeGS();
+        if(!_allVotedAt){
+          _allVotedAt=Date.now();
+          startCountdown(3000,
+            r=>{ if($('sync-st'))$('sync-st').textContent=`Wszyscy zagłosowali! Wyniki za ${r}s…`; },
+            async()=>{
+              _allVotedAt=null;
+              const next=norm(dc(GS)); next.phase='reveal';
+              let poolDelta=0;
+              next.players.forEach((p,i)=>{
+                if(!p||i===si)return;
+                const bet=parseInt(next.bets?.[i])||1;
+                if(next.votes[i]==next.sa){next.players[i].pts+=bet;next.players[si].pts++;poolDelta-=bet;poolDelta--;}
+                else{const actual=Math.min(bet,next.players[i].pts);next.players[i].pts=Math.max(0,next.players[i].pts-actual);poolDelta+=actual;}
+              });
+              next.pool=Math.max(0,(next.pool||0)+poolDelta);
+              const mode=next.gameMode||'rounds';
+              const anyBroke=next.players.some(p=>p&&p.pts<=0);
+              if(mode==='pool'&&(next.pool<=0||anyBroke))next.phase='ended';
+              else if(mode==='rounds'&&next.ri+1>=next.rt)next.phase='ended';
+              GS=next; await writeGS();
+            }
+          );
         }
-      } else {
-        _allVotedAt=null;
-        const done=guessers.filter((p,gi)=>{const pi=GS.players.indexOf(p);return GS.votes[pi]!==undefined;}).length;
         if($('sync-st'))$('sync-st').textContent=`Odpowiedzi: ${done}/${guessers.length}`;
+      } else {
+        if($('sync-st'))$('sync-st').textContent=`Odpowiedzi: ${done}/${guessers.length}`;
+        // Race condition safety: if only 1 vote missing, retry fetch after short delay
+        if(done===guessers.length-1 && !_voteRetryTimer){
+          _voteRetryTimer=setTimeout(async()=>{
+            _voteRetryTimer=null;
+            if(!gameId||!GS||GS.phase!=='voting')return;
+            try{
+              const gs=await fbGet(`games/${gameId}`);
+              if(gs){GS=norm(gs);await handleGSUpdate();}
+            }catch(e){}
+          },600);
+        } else if(done<guessers.length-1){
+          _allVotedAt=null; stopCountdown();
+        }
       }
     }
   }
@@ -1425,6 +1446,7 @@ function render(){
     _swapsLeft=2; _sjSwapsLeft=2; _lastSwapAt=null; _localBet=1;
     _reportedThisQ=false;
     stopCountdown();
+    if(_voteRetryTimer){clearTimeout(_voteRetryTimer);_voteRetryTimer=null;}
   }
   _lastRi = currentRi;
 
