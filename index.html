@@ -1020,8 +1020,8 @@ async function handleGSUpdate(){
           const mode=_gameMode;
           const idx=GS.players.map((p,i)=>p?i:null).filter(i=>i!==null);
           let sub=[];
-          if(mode==='rounds'){const rpp=Math.max(1,parseInt($('rpp')?.value)||3);for(let r=0;r<rpp;r++)sub=[...sub,...shuf([...idx])];}
-          else{for(let r=0;r<100;r++)sub=[...sub,...shuf([...idx])];}
+          if(mode==='rounds'){const rpp=Math.max(1,parseInt($('rpp')?.value)||3);for(let r=0;r<rpp;r++)sub=[...sub,...[...idx]];}
+          else{for(let r=0;r<100;r++)sub=[...sub,...[...idx]];}
           const qPool=_selectedCat?QS.map((_,i)=>i).filter(i=>(_qCatMap[i]||[]).includes(_selectedCat)):QS.map((_,i)=>i);
           const qPoolFinal=qPool.length>0?qPool:QS.map((_,i)=>i);
           if(qPoolFinal.length===0) return;
@@ -1395,9 +1395,9 @@ async function hostStart(){
   let sub,qp;
   if(mode==='rounds'){
     const rpp=Math.max(1,parseInt($('rpp').value)||3);
-    for(let r=0;r<rpp;r++) sub=[...(sub||[]),...shuf([...idx])];
+    for(let r=0;r<rpp;r++) sub=[...(sub||[]),...[...idx]];
   } else {
-    for(let r=0;r<100;r++) sub=[...(sub||[]),...shuf([...idx])];
+    for(let r=0;r<100;r++) sub=[...(sub||[]),...[...idx]];
   }
   const qPool=_selectedCat
     ? QS.map((_,i)=>i).filter(i=>(_qCatMap[i]||[]).includes(_selectedCat))
@@ -1508,6 +1508,16 @@ function setQText(elId, text){
   else if(len>80)  el.style.fontSize='17px';
   else if(len>55)  el.style.fontSize='20px';
   else             el.style.fontSize=''; // let CSS clamp() take over
+}
+
+// Build "waiting for these players" chip list for voting screen
+function buildPendingVoters(si){
+  const pending=GS.players.map((p,i)=>({p,i})).filter(({p,i})=>p&&i!==si&&GS.votes[i]===undefined);
+  if(pending.length===0){
+    return`<div style="display:flex;align-items:center;gap:6px;justify-content:center;color:var(--c2);font-size:13px;font-weight:600"><span>✓</span><span>Wszyscy zagłosowali!</span></div>`;
+  }
+  const chips=pending.map(({p,i})=>`<span style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;background:${C(i)}22;color:${C(i)};border:1px solid ${C(i)}55;white-space:nowrap">${p.name}</span>`).join('');
+  return`<div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px"><span style="font-size:11px;color:var(--muted);white-space:nowrap">Czeka na:</span>${chips}</div>`;
 }
 
 function mkSbar(id){
@@ -1633,7 +1643,11 @@ function renderVoting(){
     $('v-bet').style.display='none';
     const guessers=GS.players.filter((p,i)=>p&&i!==si);
     const done=guessers.filter((p,gi)=>{const pi=GS.players.indexOf(p);return GS.votes[pi]!==undefined;}).length;
-    $('v-st').innerHTML=`<span style="color:var(--c2)">✓ ${gW(myName,'Zatwierdziłeś','Zatwierdziłaś')}!</span> Czekaj na pozostałych… (${done}/${guessers.length})`;
+    $('v-st').innerHTML=`
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="color:var(--c2);font-size:13px;font-weight:600">✓ ${gW(myName,'Zatwierdziłeś','Zatwierdziłaś')}! (${done}/${guessers.length})</div>
+        ${buildPendingVoters(si)}
+      </div>`;
   } else {
     buildAns('v-ans',getQAnswers(GS.ri),false,null,null,i=>{
       _localVote=i; renderVoting();
@@ -1647,7 +1661,7 @@ function renderVoting(){
       $('v-bet').style.gap='8px';
       // Don't override _localBet if user already picked — only init on first show
       updateBetUI();
-      $('v-st').textContent='';
+      $('v-st').innerHTML=buildPendingVoters(si);
     } else {
       $('btn-vote').style.display='none';
       $('v-bet').style.display='none';
