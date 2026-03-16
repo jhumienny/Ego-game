@@ -76,8 +76,9 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .rrow-cfg{background:var(--card);border:1.5px solid var(--rim);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:10px;}
 .rrow-cfg label{flex:1;font-size:14px;color:var(--muted);}
 .rrow-cfg input{width:52px;text-align:right;background:none;border:none;outline:none;font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text);}
-.qcard{background:var(--card);border:1.5px solid var(--rim);border-radius:var(--rad);padding:22px 18px;position:relative;overflow:hidden;}
-.qcard::after{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;background:var(--ac,#ff4d4d);opacity:.07;}
+.qcard{background:var(--card);border:1.5px solid var(--rim);border-radius:var(--rad);padding:22px 18px;position:relative;}
+.qcard-deco{position:absolute;inset:0;border-radius:var(--rad);overflow:hidden;pointer-events:none;}
+.qcard-deco::after{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;background:var(--ac,#ff4d4d);opacity:.07;}
 .qmeta{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
 .qabout{font-size:13px;color:var(--muted);margin-bottom:6px;}
 .qabout strong{color:var(--text);}
@@ -421,6 +422,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 <div class="scr" id="s-vote">
   <div class="sbar" id="sb-v"></div>
   <div class="qcard" id="qc-v">
+    <div class="qcard-deco"></div>
     <div class="qmeta" id="v-meta"></div>
     <div class="qabout" id="v-about"></div>
     <div class="qtext" id="v-q"></div>
@@ -461,6 +463,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 <div class="scr" id="s-subj">
   <div class="sbar" id="sb-sj"></div>
   <div class="qcard" id="qc-sj">
+    <div class="qcard-deco"></div>
     <div class="qmeta" id="sj-meta"></div>
     <div class="qabout" id="sj-about" style="font-size:15px;font-weight:600;margin-bottom:8px;"></div>
     <div class="qtext" id="sj-q"></div>
@@ -1436,7 +1439,7 @@ function render(){
   if(_lastRi !== null && _lastRi !== currentRi){
     _localVote=null; _confirmedVote=null; _sjPick=null; _sjPending=null;
     _swapsLeft=2; _sjSwapsLeft=2; _lastSwapAt=null; _localBet=1;
-    _reportedThisQ=false;
+    _reportedThisQ=false; _swappedAfterReport=false;
     stopCountdown();
     if(_voteRetryTimer){clearTimeout(_voteRetryTimer);_voteRetryTimer=null;}
   }
@@ -1693,8 +1696,20 @@ async function swapQuestionSJ(){
   const newSeq=[...GS.qSeq];
   newSeq[GS.ri]=newQIdx;
 
+  // Fix qAnswers for the new question at this round index
+  const newQ=QS[newQIdx];
+  const newQAnswers={...(GS.qAnswers||{})};
+  if(newQ&&newQ.type==='players'){
+    const playerNames=GS.players.filter(Boolean).map(p=>p.name);
+    if(playerNames.length>0) newQAnswers[GS.ri]=playerNames;
+    else delete newQAnswers[GS.ri];
+  } else {
+    delete newQAnswers[GS.ri];
+  }
+
   GS.qSeq=newSeq;
   GS.usedQs=usedQs;
+  GS.qAnswers=newQAnswers;
   GS.votes={};
   GS.bets={};
   GS.sa=-1;
@@ -1706,13 +1721,14 @@ async function swapQuestionSJ(){
     await fbPatch(`games/${gameId}`,{
       [`qSeq`]:newSeq,
       usedQs,
+      qAnswers:newQAnswers,
       votes:{},
       bets:{},
       sa:-1,
       phase:'subject',
       swapAt
     });
-    GS.qSeq=newSeq;GS.usedQs=usedQs;GS.votes={};GS.bets={};GS.sa=-1;GS.phase='subject';GS.swapAt=swapAt;
+    GS.qSeq=newSeq;GS.usedQs=usedQs;GS.qAnswers=newQAnswers;GS.votes={};GS.bets={};GS.sa=-1;GS.phase='subject';GS.swapAt=swapAt;
   }catch(e){console.error('swap write',e);}
   renderSubj();
 }
@@ -2239,14 +2255,21 @@ function removeCatFromQ(idx, e){
 }
 
 let _reportedThisQ=false; // track if current question was reported this render cycle
+let _swappedAfterReport=false; // one swap per report per round
 
 function resetReportBtns(screenSuffix){
-  // If this question was already reported, keep swap button visible
   if(_reportedThisQ){
     const rb=$('report-btn-'+screenSuffix);
     const sb=$('swap-btn-'+screenSuffix);
     if(rb){ rb.textContent='✓ Zgłoszono!'; rb.style.color='var(--c2)'; rb.disabled=true; }
-    if(sb){ sb.style.display='block'; }
+    // Show swap button only if not yet swapped after report
+    if(sb){
+      if(_swappedAfterReport){
+        sb.style.display='none';
+      } else {
+        sb.style.display='block';
+      }
+    }
     return;
   }
   const rb=$('report-btn-'+screenSuffix);
@@ -2280,7 +2303,7 @@ function reportCurrentQuestion(screenSuffix){
 }
 
 async function swapReported(screenSuffix){
-  if(!GS||!gameId)return;
+  if(!GS||!gameId||_swappedAfterReport)return;
   const sb=$('swap-btn-'+screenSuffix);
   if(sb){ sb.disabled=true; sb.textContent='⏳ Zamieniam…'; }
 
@@ -2294,22 +2317,31 @@ async function swapReported(screenSuffix){
   const usedQs=[...(GS.usedQs||[]),GS.qSeq[GS.ri]];
   const newSeq=[...GS.qSeq];
   newSeq[GS.ri]=newQIdx;
-  GS.qSeq=newSeq;
-  GS.usedQs=usedQs;
-  GS.votes={};
-  GS.bets={};
-  GS.sa=-1;
-  GS.phase='subject';
+
+  // Fix qAnswers for the new question at this round index
+  const newQ=QS[newQIdx];
+  const newQAnswers={...(GS.qAnswers||{})};
+  if(newQ&&newQ.type==='players'){
+    const playerNames=GS.players.filter(Boolean).map(p=>p.name);
+    if(playerNames.length>0) newQAnswers[GS.ri]=playerNames;
+    else delete newQAnswers[GS.ri];
+  } else {
+    delete newQAnswers[GS.ri];
+  }
+
+  GS.qSeq=newSeq; GS.usedQs=usedQs; GS.qAnswers=newQAnswers;
+  GS.votes={}; GS.bets={}; GS.sa=-1; GS.phase='subject';
   const swapAt=Date.now();
-  _allVotedAt=null;
-  _sjPending=null; _localVote=null; _confirmedVote=null;
+  _allVotedAt=null; _sjPending=null; _localVote=null; _confirmedVote=null;
+  _swappedAfterReport=true;
   try{
-    await fbPatch(`games/${gameId}`,{qSeq:newSeq,usedQs,votes:{},bets:{},sa:-1,phase:'subject',swapAt});
+    await fbPatch(`games/${gameId}`,{qSeq:newSeq,usedQs,qAnswers:newQAnswers,votes:{},bets:{},sa:-1,phase:'subject',swapAt});
     GS.swapAt=swapAt;
     _reportedThisQ=false;
-    if(sb){ sb.textContent='✓ Zamieniono!'; sb.style.color='var(--c2)'; }
+    if(sb){ sb.style.display='none'; }
     render();
   }catch(e){
+    _swappedAfterReport=false;
     if(sb){ sb.textContent='Błąd – spróbuj ponownie'; sb.disabled=false; }
   }
 }
