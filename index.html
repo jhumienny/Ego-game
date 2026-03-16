@@ -862,41 +862,67 @@ function gW(name,masc,fem){return isFeminine(name)?fem:masc;}
 
 // Transforms question from 3rd person to 2nd person for subject screen
 function qForSubject(q){
-  // Remove [imię] and following space
-  let s=q.replace('[imię] ','').replace(' [imię]','').replace('[imię]','');
-  // Verb map: 3rd person → 2nd person (most common in our questions)
+  // Step 1: Remove [imię] with surrounding space
+  let s=q.replace(/\s*\[imię\]\s*/g,' ').trim();
+  // Capitalize first letter
+  s=s.charAt(0).toUpperCase()+s.slice(1);
+
+  // Step 2: Replace 3rd→2nd person verb (simple, position-agnostic)
   const verbs=[
-    ['myśli','myślisz'],['reaguje','reagujesz'],['zachowuje się','zachowujesz się'],
-    ['zachowuje','zachowujesz'],['podchodzi','podchodzisz'],['robi','robisz'],
-    ['wybiera','wybierasz'],['czuje','czujesz'],['ceni','cenisz'],['pełni','pełnisz'],
-    ['traktuje','traktujesz'],['radzi','radzisz'],['podejmuje','podejmujesz'],
-    ['irytuje','irytujesz'],['spędza','spędzasz'],['stresuje','stresujesz'],
-    ['mówi','mówisz'],['chce','chcesz'],['lubi','lubisz'],['kocha','kochasz'],
-    ['uważa','uważasz'],['szuka','szukasz'],['woli','wolisz'],['zrobi','zrobisz'],
-    ['wyjedzie','wyjedziesz'],['kupi','kupisz'],['odłoży','odłożysz'],
-    ['zmienił/a','zmieniłeś/aś'],['przeprowadził/a','przeprowadziłeś/aś'],
-    ['naprawił/a','naprawiłeś/aś'],['jest','jesteś'],['ma','masz'],['wie','wiesz'],
-    ['powie','powiesz'],['byłby/łaby','byłbyś/łabyś'],['mógł/a','możesz'],
-    ['daje','dajesz'],['bierze','bierzesz'],['spędził/a','spędziłeś/aś'],
-    ['bywa','bywasz'],['wstaje','wstajesz'],['śpi','śpisz'],['je','jesz'],
-    ['pije','pijesz'],['czyta','czytasz'],['słucha','słuchasz'],['ogląda','oglądasz'],
-    ['planuje','planujesz'],['organizuje','organizujesz'],['angażuje','angażujesz'],
-    ['zależy','zależy Ci'],['przeszkadza','przeszkadza Ci'],['podoba','podoba Ci się'],
-    ['denerwuje','denerwuje Cię'],['irytuje Cię','irytuje Cię'],
+    ['zachowuje się','zachowujesz się'],
+    ['podchodzi do','podchodzisz do'],
+    ['reaguje na','reagujesz na'],
+    ['reaguje gdy','reagujesz gdy'],
+    ['reaguje, gdy','reagujesz, gdy'],
+    ['reaguje','reagujesz'],
+    ['zachowuje','zachowujesz'],
+    ['podchodzi','podchodzisz'],
+    ['myśli o','myślisz o'],
+    ['myśli gdy','myślisz gdy'],
+    ['myśli','myślisz'],
+    ['robi gdy','robisz gdy'],
+    ['robi co','robisz co'],
+    ['robi','robisz'],
+    ['wybiera','wybierasz'],
+    ['czuje się','czujesz się'],
+    ['czuje','czujesz'],
+    ['ceni','cenisz'],
+    ['pełni','pełnisz'],
+    ['traktuje','traktujesz'],
+    ['radzi sobie','radzisz sobie'],
+    ['radzi','radzisz'],
+    ['podejmuje','podejmujesz'],
+    ['irytuje innych','irytujesz innych'],
+    ['irytuje','irytujesz'],
+    ['spędza','spędzasz'],
+    ['stresuje','stresujesz'],
+    ['mówi','mówisz'],
+    ['chce','chcesz'],
+    ['lubi','lubisz'],
+    ['kocha','kochasz'],
+    ['uważa','uważasz'],
+    ['szuka','szukasz'],
+    ['woli','wolisz'],
+    ['daje','dajesz'],
+    ['bierze','bierzesz'],
+    ['bywa','bywasz'],
+    ['wstaje','wstajesz'],
+    ['słucha','słuchasz'],
+    ['ogląda','oglądasz'],
+    ['planuje','planujesz'],
+    ['angażuje','angażujesz'],
+    ['pije','pijesz'],
+    ['jest','jesteś'],
+    ['ma ','masz '],
+    ['wie','wiesz'],
+    ['powie','powiesz'],
+    ['mógł/a','możesz'],
   ];
-  // Apply longest match first
-  verbs.sort((a,b)=>b[0].length-a[0].length);
   for(const [from,to] of verbs){
-    // Use case-insensitive search without \b since Polish chars break word boundaries
     const idx=s.toLowerCase().indexOf(from.toLowerCase());
     if(idx>=0){
-      // Check it's a whole word (preceded/followed by space, punctuation or start/end)
-      const before=idx===0||/[\s,?!]/.test(s[idx-1]);
-      const after=idx+from.length>=s.length||/[\s,?!]/.test(s[idx+from.length]);
-      if(before&&after){
-        s=s.slice(0,idx)+to+s.slice(idx+from.length);
-        break;
-      }
+      s=s.slice(0,idx)+to+s.slice(idx+from.length);
+      break;
     }
   }
   return s;
