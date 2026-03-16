@@ -1948,6 +1948,27 @@ let _bulkSelected=new Set(); // indices selected for bulk category assign
   try{ _qReported=JSON.parse(localStorage.getItem('wiem_qreported')||'{}'); }catch(e){}
   try{ _qCats=JSON.parse(localStorage.getItem('wiem_cats')||'{}'); }catch(e){}
   try{ _qCatMap=JSON.parse(localStorage.getItem('wiem_catmap')||'{}'); }catch(e){}
+
+  // Ensure "Gracze" category always exists
+  if(!_qCats['cat_players']){
+    _qCats['cat_players']={name:'Gracze',color:'#38bdf8'};
+    try{ localStorage.setItem('wiem_cats',JSON.stringify(_qCats)); }catch(e){}
+  }
+
+  // Auto-assign all player-type questions to "Gracze" category
+  let catMapChanged=false;
+  QS.forEach((q,i)=>{
+    if(q.type==='players'){
+      if(!_qCatMap[i]) _qCatMap[i]=[];
+      if(!_qCatMap[i].includes('cat_players')){
+        _qCatMap[i].push('cat_players');
+        catMapChanged=true;
+      }
+    }
+  });
+  if(catMapChanged){
+    try{ localStorage.setItem('wiem_catmap',JSON.stringify(_qCatMap)); }catch(e){}
+  }
 })();
 
 const CAT_COLORS=['#7c3aed','#0891b2','#059669','#d97706','#dc2626','#db2777','#4338ca','#0284c7'];
