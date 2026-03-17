@@ -1006,6 +1006,16 @@ async function patchGS(fields){
 async function handleGSUpdate(){
   if(GS.phase==='lobby' && mySlot!==null && !$('s-slots').classList.contains('on')) renderLobby();
 
+  // Detect if this player was removed from the game (kicked or slot cleared)
+  if(mySlot!==null && !isHost && GS.phase==='lobby' && !GS.players[mySlot]){
+    stopPoll();
+    sessionStorage.removeItem('ego_sess');
+    sessionStorage.removeItem('ego_name');
+    gameId=null; mySlot=null; isHost=false; GS=null;
+    show('s-home');
+    return;
+  }
+
   if(isHost){
     const si=GS.subjects[GS.ri]??0;
 
