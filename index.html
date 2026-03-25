@@ -1734,7 +1734,7 @@ function renderVoting(){
       $('v-bet').style.gap='8px';
       // Don't override _localBet if user already picked — only init on first show
       updateBetUI();
-      $('v-st').innerHTML=buildPendingVoters(si);
+      $('v-st').textContent='';
     } else {
       $('btn-vote').style.display='none';
       $('v-bet').style.display='none';
