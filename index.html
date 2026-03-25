@@ -473,6 +473,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   <button class="btn btn-lit" id="btn-sj" style="display:none" onclick="submitSJ()">Zatwierdź i pozwól innym odpowiedzieć →</button>
   <button class="btn btn-dim" id="report-btn-sj" style="font-size:11px;padding:8px;color:var(--muted);border-color:var(--rim)" onclick="reportCurrentQuestion('sj')">⚑ Zgłoś błąd w pytaniu</button>
   <button class="btn btn-dim" id="swap-btn-sj" style="display:none;font-size:11px;padding:8px;color:var(--c3);border-color:var(--c3)55" onclick="swapReported('sj')">🔄 Zamień pytanie na inne</button>
+  <button class="btn btn-dim" style="font-size:12px;padding:10px;color:var(--c0);border-color:var(--c0)33;margin-top:4px" onclick="leaveGame()">← Opuść grę</button>
 </div>
 
 <!-- ══ REVEAL ══ -->
@@ -1036,8 +1037,14 @@ async function handleGSUpdate(){
     return;
   }
 
+  // Apply slot remap when returning to lobby after mid-game player left
+  if(GS.phase==='lobby' && GS.slotRemap && mySlot!==null && GS.slotRemap[mySlot]!==undefined && GS.slotRemap[mySlot]!==mySlot){
+    mySlot=GS.slotRemap[mySlot];
+    sessionStorage.setItem('ego_sess',JSON.stringify({gameId,mySlot}));
+  }
+
   // Detect if this player was promoted to host (e.g. original host left mid-game)
-  if(GS.phase==='lobby' && mySlot!==null && GS.hostSlot!==undefined && mySlot===GS.hostSlot && !isHost){
+  if(GS.phase==='lobby' && mySlot!==null && (GS.hostSlot??0)===mySlot && !isHost){
     isHost=true;
     if(_kickCheckTimer){clearInterval(_kickCheckTimer);_kickCheckTimer=null;}
   }
@@ -1424,14 +1431,22 @@ async function leaveGame(){
         await fbPatch(`games/${gameId}`,{phase:'ended'});
       } else {
         const currentHostSlot=GS.hostSlot??0;
-        const newHostSlot=remainingSlots.includes(currentHostSlot)
+        const rawHostSlot=remainingSlots.includes(currentHostSlot)
           ? currentHostSlot
           : remainingSlots[Math.floor(Math.random()*remainingSlots.length)];
-        const resetPlayers=newPlayers.map(p=>p?{name:p.name,pts:10}:null);
+        // Compact: host first, then rest in original order
+        const ordered=[rawHostSlot,...remainingSlots.filter(s=>s!==rawHostSlot)];
+        const compactPlayers=ordered.map(s=>({name:GS.players[s].name,pts:10}));
+        // Pad to maxPlayers with nulls
+        const max=GS.maxPlayers||4;
+        while(compactPlayers.length<max)compactPlayers.push(null);
+        // Build remap: oldSlot → newSlot
+        const slotRemap={};
+        ordered.forEach((oldSlot,newSlot)=>{slotRemap[oldSlot]=newSlot;});
         await fbPut(`games/${gameId}`,{
-          phase:'lobby',players:resetPlayers,hostSlot:newHostSlot,
+          phase:'lobby',players:compactPlayers,hostSlot:0,slotRemap,
           subjects:[],qSeq:[],qAnswers:{},rt:0,ri:0,
-          votes:{},bets:{},sa:-1,ready:{},maxPlayers:GS.maxPlayers||4,pool:0
+          votes:{},bets:{},sa:-1,ready:{},maxPlayers:max,pool:0
         });
       }
     } else if(mySlot!==null && gameId){
@@ -1612,10 +1627,13 @@ function setQText(elId, text){
 function buildPendingVoters(si){
   const pending=GS.players.map((p,i)=>({p,i})).filter(({p,i})=>p&&i!==si&&GS.votes[i]===undefined);
   if(pending.length===0){
-    return`<div style="display:flex;align-items:center;gap:6px;justify-content:center;color:var(--c2);font-size:13px;font-weight:600"><span>✓</span><span>Wszyscy zagłosowali!</span></div>`;
+    return`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--rim);color:var(--c2);font-size:13px;font-weight:600;text-align:center">✓ Wszyscy zagłosowali!</div>`;
   }
-  const chips=pending.map(({p,i})=>`<span style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;background:${C(i)}22;color:${C(i)};border:1px solid ${C(i)}55;white-space:nowrap">${p.name}</span>`).join('');
-  return`<div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px"><span style="font-size:11px;color:var(--muted);white-space:nowrap">Czeka na:</span>${chips}</div>`;
+  const chips=pending.map(({p,i})=>`<span style="font-size:12px;font-weight:700;padding:4px 12px;border-radius:99px;background:${C(i)}22;color:${C(i)};border:1px solid ${C(i)}55;white-space:nowrap">${p.name}</span>`).join('');
+  return`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--rim)">
+    <div style="font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px;text-align:center">Czeka na</div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center">${chips}</div>
+  </div>`;
 }
 
 function mkSbar(id){
